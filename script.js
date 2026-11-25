@@ -2,7 +2,7 @@
 // CẤU HÌNH ĐỒNG BỘ DỮ LIỆU CHUNG & THÔNG BÁO TELEGRAM
 // =========================================================
 const FIREBASE_DB_URL = "";
-const TELEGRAM_BOT_TOKEN = "9239401421:AAE3zASpF8kI0rZSNF2JWElnrOxncWJjtCw";
+const TELEGRAM_BOT_TOKEN = "9017728618:AAF6lYd-Pr4br1TyUL_ZainwW0JsmCsGguk";
 const TELEGRAM_CHAT_ID = "6713370589";
 
 async function sendVoteToTelegram(voteRecord, regionFullName) {
