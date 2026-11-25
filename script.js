@@ -1,8 +1,36 @@
 // =========================================================
-// CẤU HÌNH ĐỒNG BỘ DỮ LIỆU CHUNG (FIREBASE REALTIME DATABASE)
+// CẤU HÌNH ĐỒNG BỘ DỮ LIỆU CHUNG & THÔNG BÁO TELEGRAM
 // =========================================================
-// Dán URL Realtime Database của bạn vào biến FIREBASE_DB_URL nếu muốn mọi người thấy chung lượt bình chọn.
 const FIREBASE_DB_URL = "";
+const TELEGRAM_BOT_TOKEN = "9239401421:AAE3zASpF8kI0rZSNF2JWElnrOxncWJjtCw";
+const TELEGRAM_CHAT_ID = "6713370589";
+
+async function sendVoteToTelegram(voteRecord, regionFullName) {
+  const token = TELEGRAM_BOT_TOKEN.trim();
+  const chatId = TELEGRAM_CHAT_ID.trim();
+  if (!token || !chatId) return;
+
+  const text = [
+    "🥛 CÓ LƯỢT BÌNH CHỌN SỮA KUN MỚI!",
+    `👤 Họ tên: ${voteRecord.name}`,
+    `📞 SĐT: ${voteRecord.phone}`,
+    `📍 Vùng miền: ${regionFullName}`,
+    `⏰ Thời gian: ${voteRecord.time}`
+  ].join("\n");
+
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: text
+      })
+    });
+  } catch (err) {
+    console.warn("Lỗi gửi Telegram:", err);
+  }
+}
 
 const REGIONS = [
   {
@@ -102,6 +130,9 @@ let state = loadLocalState();
 let activeModalRegionId = 'biendao';
 let selectedGender = 'Nữ';
 
+// =========================================================
+// ĐỒNG BỘ DỮ LIỆU CHUNG QUA FIREBASE (NẾU ĐÃ GẮN LINK)
+// =========================================================
 function getCleanDbUrl() {
   return FIREBASE_DB_URL.trim().replace(/\/$/, '');
 }
@@ -148,6 +179,9 @@ async function pushVoteToCloud(voteRecord) {
   return res.ok;
 }
 
+// =========================================================
+// TIỆN ÍCH HIỂN THỊ
+// =========================================================
 function formatNumber(num) {
   return num.toLocaleString('vi-VN');
 }
@@ -175,6 +209,9 @@ function showToast(message) {
   }, 3800);
 }
 
+// =========================================================
+// RENDER GIAO DIỆN
+// =========================================================
 function renderAll() {
   const totalVotes = Object.values(state.votes).reduce((a, b) => a + b, 0);
   const extraVotes = Math.max(0, totalVotes - REGIONS.reduce((a, b) => a + b.baseVotes, 0));
@@ -247,6 +284,9 @@ function renderAll() {
   }).join('');
 }
 
+// =========================================================
+// XỬ LÝ POPUP BÌNH CHỌN (NHẬP HỌ TÊN & SĐT)
+// =========================================================
 const voteModal = document.getElementById('voteModal');
 const voteForm = document.getElementById('voteForm');
 const voterNameInput = document.getElementById('voterName');
@@ -341,10 +381,12 @@ voteForm.addEventListener('submit', async (e) => {
     renderAll();
   }
 
+  const chosenRegion = REGIONS.find(r => r.id === activeModalRegionId);
+  await sendVoteToTelegram(newVote, chosenRegion ? chosenRegion.fullName : activeModalRegionId);
+
   btnSubmitVote.disabled = false;
   btnSubmitVote.textContent = '💛 Xác nhận bình chọn & Viết lời nhắn';
 
-  const chosenRegion = REGIONS.find(r => r.id === activeModalRegionId);
   closeVoteModal();
   showToast(`🎉 Cảm ơn ${fullName}! Bạn đã trao yêu thương tới ${chosenRegion.fullName}.`);
 
@@ -358,6 +400,9 @@ voteForm.addEventListener('submit', async (e) => {
   document.getElementById('tao-postcard').scrollIntoView({ behavior: 'smooth' });
 });
 
+// =========================================================
+// TRÌNH TẠO POSTCARD & XUẤT ẢNH .PNG
+// =========================================================
 const pcRegion = document.getElementById('pcRegion');
 const pcSenderName = document.getElementById('pcSenderName');
 const pcKidName = document.getElementById('pcKidName');
