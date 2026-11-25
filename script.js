@@ -1,0 +1,518 @@
+// =========================================================
+// CẤU HÌNH ĐỒNG BỘ DỮ LIỆU CHUNG (FIREBASE REALTIME DATABASE)
+// =========================================================
+// Dán URL Realtime Database của bạn vào biến FIREBASE_DB_URL nếu muốn mọi người thấy chung lượt bình chọn.
+const FIREBASE_DB_URL = "";
+
+const REGIONS = [
+  {
+    id: 'biendao',
+    name: 'Biển Đảo',
+    sub: 'xa xôi',
+    fullName: 'Biển Đảo xa xôi',
+    icon: '🏝️',
+    badge: 'Hải đảo Tổ quốc',
+    bgClass: 'bg-biendao',
+    color: '#0284c7',
+    gradient: ['#0284c7', '#06b6d4'],
+    desc: 'Gửi những hộp sữa KUN 100% Sữa Tươi vượt sóng ra khơi, tiếp thêm dinh dưỡng cho các em nhỏ nơi đảo xa.',
+    baseVotes: 3840
+  },
+  {
+    id: 'mientrung',
+    name: 'Miền Trung',
+    sub: 'ruột thịt',
+    fullName: 'Miền Trung ruột thịt',
+    icon: '☀️',
+    badge: 'Khúc ruột miền Trung',
+    bgClass: 'bg-mientrung',
+    color: '#f97316',
+    gradient: ['#f97316', '#f59e0b'],
+    desc: 'Trao nguồn năng lượng tươi mát và lời động viên ấm áp tới các em nhỏ vùng nắng gió miền Trung.',
+    baseVotes: 3420
+  },
+  {
+    id: 'taynguyen',
+    name: 'Tây Nguyên',
+    sub: 'nắng gió',
+    fullName: 'Tây Nguyên nắng gió',
+    icon: '🌲',
+    badge: 'Đại ngàn Tây Nguyên',
+    bgClass: 'bg-taynguyen',
+    color: '#16a34a',
+    gradient: ['#15803d', '#65a30d'],
+    desc: 'Đồng hành cùng các em nhỏ buôn làng Tây Nguyên cao lớn, khỏe mạnh và vui tới trường mỗi ngày.',
+    baseVotes: 2790
+  },
+  {
+    id: 'mekong',
+    name: 'MeKong',
+    sub: 'nghĩa tình',
+    fullName: 'MeKong nghĩa tình',
+    icon: '🚣',
+    badge: 'Miền Tây sông nước',
+    bgClass: 'bg-mekong',
+    color: '#0d9488',
+    gradient: ['#0d9488', '#10b981'],
+    desc: 'Mang dòng sữa mát lành cùng sân chơi KUN rộn rã tiếng cười đến với thiếu nhi vùng sông nước Cửu Long.',
+    baseVotes: 2430
+  }
+];
+
+const SUGGESTED_MESSAGES = [
+  'Chúc các em luôn mạnh khỏe, chăm ngoan, học giỏi và cao lớn mỗi ngày cùng sữa KUN nhé!',
+  'Gửi tới các em cái ôm thật ấm áp! Chúc các em luôn vui tươi, tự tin theo đuổi ước mơ của mình.',
+  'Mỗi ngày uống sữa KUN thật ngon để luôn khỏe mạnh, năng động và rạng rỡ nụ cười các em nhé!',
+  'Dù ở nơi đâu, các bạn nhỏ cũng luôn có thật nhiều yêu thương đồng hành. Cố lên các em nhé!'
+];
+
+const INITIAL_VOTERS = [
+  { name: 'Trần Thu Hà', phone: '0904123889', regionId: 'biendao', time: 'Vừa xong' },
+  { name: 'Lê Hoàng Nam', phone: '0987654321', regionId: 'mientrung', time: '2 phút trước' },
+  { name: 'Nguyễn Ngọc Ánh', phone: '0912889456', regionId: 'taynguyen', time: '5 phút trước' },
+  { name: 'Phạm Gia Huy', phone: '0935771204', regionId: 'mekong', time: '9 phút trước' }
+];
+
+const STORAGE_KEY = 'sua_kun_cho_ban_state_v2';
+
+function getDefaultState() {
+  const defaultVotes = {};
+  REGIONS.forEach(r => { defaultVotes[r.id] = r.baseVotes; });
+  return {
+    votes: defaultVotes,
+    voters: [...INITIAL_VOTERS]
+  };
+}
+
+function loadLocalState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (saved && saved.votes && Array.isArray(saved.voters)) {
+      return saved;
+    }
+  } catch (e) {}
+  return getDefaultState();
+}
+
+function saveLocalState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+let state = loadLocalState();
+let activeModalRegionId = 'biendao';
+let selectedGender = 'Nữ';
+
+function getCleanDbUrl() {
+  return FIREBASE_DB_URL.trim().replace(/\/$/, '');
+}
+
+async function syncFromCloud() {
+  const baseUrl = getCleanDbUrl();
+  if (!baseUrl) return;
+  try {
+    const res = await fetch(`${baseUrl}/kunVotes.json`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data) return;
+
+    const merged = getDefaultState();
+    const list = Object.values(data);
+    list.forEach(item => {
+      if (item && item.regionId && merged.votes[item.regionId] !== undefined) {
+        merged.votes[item.regionId] += 1;
+      }
+    });
+
+    const recentCloud = list
+      .filter(item => item && item.name && item.phone && item.regionId)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    merged.voters = [...recentCloud, ...INITIAL_VOTERS];
+    state = merged;
+    saveLocalState();
+    renderAll();
+    document.getElementById('syncStatusText').textContent = 'Đồng bộ trực tuyến toàn cộng đồng';
+  } catch (err) {
+    console.warn('Không thể tải dữ liệu trực tuyến:', err);
+  }
+}
+
+async function pushVoteToCloud(voteRecord) {
+  const baseUrl = getCleanDbUrl();
+  if (!baseUrl) return false;
+  const res = await fetch(`${baseUrl}/kunVotes.json`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(voteRecord)
+  });
+  return res.ok;
+}
+
+function formatNumber(num) {
+  return num.toLocaleString('vi-VN');
+}
+
+function maskPhone(phone) {
+  if (!phone || phone.length < 7) return phone;
+  return phone.slice(0, 3) + '***' + phone.slice(-4);
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function showToast(message) {
+  const toast = document.getElementById('toastBox');
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3800);
+}
+
+function renderAll() {
+  const totalVotes = Object.values(state.votes).reduce((a, b) => a + b, 0);
+  const extraVotes = Math.max(0, totalVotes - REGIONS.reduce((a, b) => a + b.baseVotes, 0));
+
+  document.getElementById('totalParticipants').textContent = formatNumber(totalVotes);
+  document.getElementById('totalMilkBoxes').textContent = formatNumber(10000000 + extraVotes * 10);
+  document.getElementById('totalKids').textContent = formatNumber(5000000 + extraVotes * 5);
+
+  const grid = document.getElementById('regionsGrid');
+  grid.innerHTML = REGIONS.map(region => {
+    const count = state.votes[region.id] || 0;
+    const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 25;
+    return `
+      <article class="region-card">
+        <div class="region-banner ${region.bgClass}">
+          <span class="region-badge">${region.badge}</span>
+          <div class="region-icon">${region.icon}</div>
+        </div>
+        <div class="region-body">
+          <h3 class="region-title">${region.name}</h3>
+          <div class="region-tagline">${region.sub}</div>
+          <p class="region-desc">${region.desc}</p>
+          <div class="region-stats">
+            <div class="stat-row">
+              <span>${formatNumber(count)} lượt chọn</span>
+              <span style="color: ${region.color};">${pct}%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width: ${pct}%; background: ${region.color};"></div>
+            </div>
+          </div>
+          <button type="button" class="btn-vote-region" data-region="${region.id}">
+            💌 Trao "Lời Nhắn Gửi" Yêu Thương
+          </button>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.btn-vote-region').forEach(btn => {
+    btn.addEventListener('click', () => openVoteModal(btn.dataset.region));
+  });
+
+  const sorted = [...REGIONS].sort((a, b) => (state.votes[b.id] || 0) - (state.votes[a.id] || 0));
+  document.getElementById('rankingList').innerHTML = sorted.map((r, idx) => {
+    const count = state.votes[r.id] || 0;
+    const pct = totalVotes > 0 ? ((count / totalVotes) * 100).toFixed(1) : 25;
+    return `
+      <div class="rank-item">
+        <div class="rank-num">${idx + 1}</div>
+        <div class="rank-info">
+          <div class="rank-name">${r.icon} ${r.fullName}</div>
+          <div class="rank-votes">${formatNumber(count)} lượt bình chọn (${pct}%)</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('voterList').innerHTML = state.voters.slice(0, 25).map(v => {
+    const r = REGIONS.find(item => item.id === v.regionId) || REGIONS[0];
+    return `
+      <div class="voter-item">
+        <div>
+          <div class="voter-main">${escapeHtml(v.name)} <span class="voter-phone">(${maskPhone(v.phone)})</span></div>
+          <div style="font-size: 0.76rem; color: var(--text-muted);">${escapeHtml(v.time || 'Vừa tham gia')}</div>
+        </div>
+        <span class="voter-tag">${r.icon} ${r.name}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+const voteModal = document.getElementById('voteModal');
+const voteForm = document.getElementById('voteForm');
+const voterNameInput = document.getElementById('voterName');
+const voterPhoneInput = document.getElementById('voterPhone');
+const nameError = document.getElementById('nameError');
+const phoneError = document.getElementById('phoneError');
+const btnSubmitVote = document.getElementById('btnSubmitVote');
+
+function openVoteModal(regionId) {
+  activeModalRegionId = regionId;
+  const r = REGIONS.find(item => item.id === regionId) || REGIONS[0];
+  document.getElementById('modalRegionInfo').textContent = `${r.icon} Vùng miền bình chọn: ${r.fullName}`;
+  nameError.style.display = 'none';
+  phoneError.style.display = 'none';
+  voteModal.classList.add('open');
+  voteModal.setAttribute('aria-hidden', 'false');
+  voterNameInput.focus();
+}
+
+function closeVoteModal() {
+  voteModal.classList.remove('open');
+  voteModal.setAttribute('aria-hidden', 'true');
+}
+
+document.getElementById('btnCloseModal').addEventListener('click', closeVoteModal);
+voteModal.addEventListener('click', (e) => {
+  if (e.target === voteModal) closeVoteModal();
+});
+
+voterPhoneInput.addEventListener('input', () => {
+  voterPhoneInput.value = voterPhoneInput.value.replace(/\D/g, '').slice(0, 10);
+});
+
+voteForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fullName = voterNameInput.value.trim();
+  const phone = voterPhoneInput.value.trim();
+
+  let valid = true;
+  if (fullName.length < 2) {
+    nameError.style.display = 'block';
+    valid = false;
+  } else {
+    nameError.style.display = 'none';
+  }
+
+  if (!/^0\d{9}$/.test(phone)) {
+    phoneError.textContent = 'Vui lòng nhập số điện thoại hợp lệ (10 chữ số, bắt đầu bằng số 0).';
+    phoneError.style.display = 'block';
+    valid = false;
+  } else {
+    phoneError.style.display = 'none';
+  }
+
+  if (!valid) return;
+
+  const existed = state.voters.find(v => v.phone === phone);
+  if (existed) {
+    const prevRegion = REGIONS.find(r => r.id === existed.regionId);
+    phoneError.textContent = `Số điện thoại này đã bình chọn cho "${prevRegion ? prevRegion.fullName : 'vùng miền'}" rồi nhé!`;
+    phoneError.style.display = 'block';
+    return;
+  }
+
+  const now = new Date();
+  const timeLabel = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} • ${now.getDate()}/${now.getMonth() + 1}`;
+  const newVote = {
+    name: fullName,
+    phone: phone,
+    regionId: activeModalRegionId,
+    time: timeLabel,
+    createdAt: Date.now()
+  };
+
+  btnSubmitVote.disabled = true;
+  btnSubmitVote.textContent = '⏳ Đang gửi bình chọn...';
+
+  if (getCleanDbUrl()) {
+    try {
+      await pushVoteToCloud(newVote);
+      await syncFromCloud();
+    } catch (err) {
+      state.votes[activeModalRegionId] = (state.votes[activeModalRegionId] || 0) + 1;
+      state.voters.unshift(newVote);
+      saveLocalState();
+      renderAll();
+    }
+  } else {
+    state.votes[activeModalRegionId] = (state.votes[activeModalRegionId] || 0) + 1;
+    state.voters.unshift(newVote);
+    saveLocalState();
+    renderAll();
+  }
+
+  btnSubmitVote.disabled = false;
+  btnSubmitVote.textContent = '💛 Xác nhận bình chọn & Viết lời nhắn';
+
+  const chosenRegion = REGIONS.find(r => r.id === activeModalRegionId);
+  closeVoteModal();
+  showToast(`🎉 Cảm ơn ${fullName}! Bạn đã trao yêu thương tới ${chosenRegion.fullName}.`);
+
+  document.getElementById('pcRegion').value = activeModalRegionId;
+  const shortName = fullName.split(' ').slice(-2).join(' ').slice(0, 13);
+  document.getElementById('pcSenderName').value = shortName;
+  updatePostcardPreview();
+
+  voterNameInput.value = '';
+  voterPhoneInput.value = '';
+  document.getElementById('tao-postcard').scrollIntoView({ behavior: 'smooth' });
+});
+
+const pcRegion = document.getElementById('pcRegion');
+const pcSenderName = document.getElementById('pcSenderName');
+const pcKidName = document.getElementById('pcKidName');
+const pcMessage = document.getElementById('pcMessage');
+const postcardPreview = document.getElementById('postcardPreview');
+
+function updatePostcardPreview() {
+  const r = REGIONS.find(item => item.id === pcRegion.value) || REGIONS[0];
+  const sender = pcSenderName.value.trim();
+  const kid = pcKidName.value.trim();
+  const msg = pcMessage.value.trim();
+
+  document.getElementById('senderCount').textContent = `${pcSenderName.value.length}/13`;
+  document.getElementById('kidCount').textContent = `${pcKidName.value.length}/13`;
+  document.getElementById('msgCount').textContent = `${pcMessage.value.length}/110`;
+
+  postcardPreview.className = `postcard-card ${r.bgClass}`;
+  document.getElementById('previewRegionLabel').textContent = `${r.icon} ${r.fullName}`;
+  document.getElementById('previewTo').textContent = `Gửi các em nhỏ ${r.fullName} 💛`;
+  document.getElementById('previewQuote').textContent =
+    msg || 'Chúc các em luôn mạnh khỏe, chăm ngoan, học giỏi và cao lớn mỗi ngày cùng sữa KUN nhé!';
+
+  const prefix = selectedGender === 'Nam' ? 'Anh/Chú' : 'Chị/Cô';
+  if (sender && kid) {
+    document.getElementById('previewSender').textContent = `${prefix} ${sender} & bé ${kid}`;
+  } else if (sender) {
+    document.getElementById('previewSender').textContent = `${prefix} ${sender}`;
+  } else if (kid) {
+    document.getElementById('previewSender').textContent = `Bé ${kid}`;
+  } else {
+    document.getElementById('previewSender').textContent = 'Người bạn đồng hành';
+  }
+}
+
+[pcRegion, pcSenderName, pcKidName, pcMessage].forEach(el => {
+  el.addEventListener('input', updatePostcardPreview);
+  el.addEventListener('change', updatePostcardPreview);
+});
+
+document.querySelectorAll('.gender-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedGender = btn.dataset.gender;
+    updatePostcardPreview();
+  });
+});
+
+let suggestIdx = 0;
+document.getElementById('btnSuggestMsg').addEventListener('click', () => {
+  pcMessage.value = SUGGESTED_MESSAGES[suggestIdx % SUGGESTED_MESSAGES.length];
+  suggestIdx++;
+  updatePostcardPreview();
+});
+
+document.getElementById('btnCopyHashtag').addEventListener('click', () => {
+  navigator.clipboard?.writeText('#SuaKUNChoBan #CungEmCaoLon');
+  showToast('📋 Đã sao chép hashtag #SuaKUNChoBan #CungEmCaoLon!');
+});
+
+document.getElementById('btnDownloadPostcard').addEventListener('click', () => {
+  const r = REGIONS.find(item => item.id === pcRegion.value) || REGIONS[0];
+  const canvas = document.createElement('canvas');
+  canvas.width = 1000;
+  canvas.height = 750;
+  const ctx = canvas.getContext('2d');
+
+  const grad = ctx.createLinearGradient(0, 0, 1000, 750);
+  grad.addColorStop(0, r.gradient[0]);
+  grad.addColorStop(1, r.gradient[1]);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 1000, 750);
+
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 18;
+  ctx.strokeRect(24, 24, 952, 702);
+
+  ctx.fillStyle = '#FFD100';
+  roundRect(ctx, 64, 60, 290, 56, 28, true);
+  ctx.fillStyle = '#003D82';
+  ctx.font = 'bold 26px sans-serif';
+  ctx.fillText('SỮA KUN CHO BẠN', 92, 97);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  roundRect(ctx, 620, 60, 316, 56, 28, true);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 24px sans-serif';
+  ctx.fillText(`${r.icon} ${r.fullName}`, 648, 96);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.96)';
+  roundRect(ctx, 64, 165, 872, 410, 32, true);
+
+  ctx.fillStyle = '#FF6B00';
+  ctx.font = 'bold 24px sans-serif';
+  ctx.fillText(`GỬI CÁC EM NHỎ ${r.fullName.toUpperCase()} 💛`, 104, 225);
+
+  ctx.fillStyle = '#003D82';
+  ctx.font = 'bold 34px sans-serif';
+  const quoteText = document.getElementById('previewQuote').textContent;
+  wrapText(ctx, quoteText, 104, 295, 790, 48);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 24px sans-serif';
+  ctx.fillText('Lời nhắn từ:', 68, 632);
+
+  ctx.fillStyle = '#FFD100';
+  ctx.font = 'bold 34px sans-serif';
+  ctx.fillText(document.getElementById('previewSender').textContent, 68, 678);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 26px sans-serif';
+  ctx.fillText('#SuaKUNChoBan', 710, 676);
+
+  const link = document.createElement('a');
+  link.download = `postcard-sua-kun-${r.id}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showToast('📥 Đã lưu ảnh Postcard Sữa KUN về máy của bạn!');
+});
+
+function roundRect(ctx, x, y, width, height, radius, fill) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+  if (fill) ctx.fill();
+}
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  let line = '';
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + ' ';
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && n > 0) {
+      ctx.fillText(line, x, y);
+      line = words[n] + ' ';
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line, x, y);
+}
+
+renderAll();
+updatePostcardPreview();
+if (getCleanDbUrl()) {
+  syncFromCloud();
+  setInterval(syncFromCloud, 6000);
+}
