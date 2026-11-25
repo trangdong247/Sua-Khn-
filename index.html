@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>Sữa KUN Cho Bạn - Cùng Em Cao Lớn | Bình Chọn & Gửi Lời Nhắn Yêu Thương</title>
+  <meta name="description" content="Đồng hành cùng KUN trao tặng những hộp sữa KUN 100% Sữa Tươi cùng lời nhắn gửi yêu thương đến các em nhỏ vùng khó khăn khắp mọi miền Tổ quốc. #SuaKUNChoBan">
+  <meta name="theme-color" content="#0057b8">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Sữa KUN Cho Bạn - Cùng Em Cao Lớn">
+  <meta property="og:description" content="Chọn vùng miền yêu thương, nhập thông tin bình chọn và tạo Postcard gửi đến các em nhỏ!">
+  <meta property="og:locale" content="vi_VN">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- THANH ĐIỀU HƯỚNG -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="#" class="brand">
+        <span class="brand-badge">KUN</span>
+        <div class="brand-text">
+          SỮA KUN CHO BẠN
+          <span>Cùng Em Cao Lớn</span>
+        </div>
+      </a>
+      <nav class="nav-links">
+        <a href="#binh-chon">Bình chọn vùng miền</a>
+        <a href="#bang-xep-hang">Tiến độ trao sữa</a>
+        <a href="#tao-postcard" class="btn-nav">Tạo Postcard</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO BANNER -->
+  <section class="hero">
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+
+    <div class="container hero-grid">
+      <div>
+        <div class="campaign-pill">
+          <span>💛</span> Đồng hành cùng chương trình "Thắp sáng ước mơ Thiếu Nhi Việt Nam"
+        </div>
+        <h1>
+          Sữa KUN Cho Bạn <br>
+          <span class="highlight">Cùng Em Cao Lớn</span>
+        </h1>
+        <p class="hero-desc">
+          Mỗi lượt bình chọn vùng miền kèm lời nhắn gửi yêu thương là một cái ôm sẻ chia ấm áp, góp phần mang những hộp <strong>KUN 100% Sữa Tươi</strong> dinh dưỡng đến với các em nhỏ vùng khó khăn.
+        </p>
+        <div class="hero-actions">
+          <a href="#binh-chon" class="btn-primary">🥛 Bình chọn & Trao sữa ngay</a>
+          <a href="#tao-postcard" class="btn-secondary">💌 Viết lời nhắn Postcard</a>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="milk-showcase">
+          <svg width="160" height="190" viewBox="0 0 180 210" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Hộp sữa KUN 100% Sữa Tươi">
+            <path d="M55 28L90 12L125 28L135 52H45L55 28Z" fill="#0284C7"/>
+            <path d="M90 12L125 28L135 52H90V12Z" fill="#0369A1"/>
+            <rect x="45" y="52" width="90" height="135" rx="14" fill="#FFFFFF"/>
+            <rect x="45" y="52" width="90" height="46" rx="12" fill="#0057B8"/>
+            <rect x="62" y="62" width="56" height="26" rx="10" fill="#FFD100"/>
+            <text x="90" y="81" text-anchor="middle" fill="#003D82" font-family="Arial, sans-serif" font-weight="900" font-size="18">KUN</text>
+            <circle cx="90" cy="134" r="28" fill="#E0F2FE"/>
+            <text x="90" y="131" text-anchor="middle" fill="#0057B8" font-family="Arial, sans-serif" font-weight="900" font-size="14">100%</text>
+            <text x="90" y="147" text-anchor="middle" fill="#FF6B00" font-family="Arial, sans-serif" font-weight="800" font-size="10">SỮA TƯƠI</text>
+            <path d="M45 168C68 158 112 178 135 166V177C135 183 130 187 124 187H56C50 187 45 183 45 177V168Z" fill="#22C55E"/>
+          </svg>
+          <div style="font-weight: 800; font-size: 1.05rem; margin-top: 6px;">
+            Trao yêu thương đến các em bé
+          </div>
+          <div class="hashtag-chip">#SuaKUNChoBan</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BỘ ĐẾM THỐNG KÊ CỘNG ĐỒNG -->
+  <div class="container impact-wrapper">
+    <div class="impact-bar">
+      <div class="impact-item">
+        <div class="impact-number" id="totalMilkBoxes">10.000.000</div>
+        <div class="impact-label">Hộp sữa KUN 100% Sữa Tươi</div>
+        <div class="impact-sub">Đã được công nhận để trao tặng</div>
+      </div>
+      <div class="impact-item">
+        <div class="impact-number orange" id="totalKids">5.000.000</div>
+        <div class="impact-label">Em bé khắp mọi miền</div>
+        <div class="impact-sub">Đã nhận được sữa & niềm vui</div>
+      </div>
+      <div class="impact-item">
+        <div class="impact-number green" id="totalParticipants">12.480</div>
+        <div class="impact-label">Lượt bình chọn & lời nhắn</div>
+        <div class="impact-sub" id="syncStatusText">Cộng đồng cùng chung tay</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: BÌNH CHỌN VÙNG MIỀN -->
+  <section class="section" id="binh-chon">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Bước 1 • Chung tay sẻ chia</span>
+        <h2 class="section-title">Chọn Vùng Miền Bạn Muốn Trao Yêu Thương</h2>
+        <p class="section-subtitle">
+          Nhập <strong>Họ tên & Số điện thoại</strong> của bạn để bình chọn ưu tiên phân bổ sữa KUN và mở khóa thẻ Postcard gửi đến các em nhỏ.
+        </p>
+      </div>
+
+      <div class="regions-grid" id="regionsGrid"></div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: BẢNG TIẾN ĐỘ & LỊCH SỬ NGƯỜI ĐỒNG HÀNH -->
+  <section class="section" id="bang-xep-hang">
+    <div class="container">
+      <div class="board-grid">
+        <div class="panel-card">
+          <div class="panel-title">
+            <span>📊 Tiến độ bình chọn theo vùng</span>
+            <span style="font-size: 0.8rem; color: var(--kun-orange); font-weight: 800;" id="liveBadge">● Trực tiếp</span>
+          </div>
+          <div id="rankingList"></div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-title">
+            <span>💛 Người đồng hành gần đây</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Bảo mật SĐT</span>
+          </div>
+          <div class="voter-list" id="voterList"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: TRÌNH TẠO POSTCARD LỜI NHẮN GỬI -->
+  <section class="section" id="tao-postcard">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Bước 2 • Lan tỏa yêu thương</span>
+        <h2 class="section-title">Tạo Postcard "Lời Nhắn Gửi Yêu Thương"</h2>
+        <p class="section-subtitle">
+          Những lời nhắn chứa chan tình cảm của bạn sẽ được lưu lại và trang trí tại các sân chơi KUN dành cho các em nhỏ.
+        </p>
+      </div>
+
+      <div class="postcard-studio">
+        <div>
+          <div class="form-group">
+            <div class="form-label-row">
+              <label class="form-label" for="pcRegion">Vùng miền nhận lời nhắn</label>
+            </div>
+            <select id="pcRegion" class="form-control">
+              <option value="biendao">🏝️ Biển Đảo xa xôi</option>
+              <option value="mientrung">☀️ Miền Trung ruột thịt</option>
+              <option value="taynguyen">🌲 Tây Nguyên nắng gió</option>
+              <option value="mekong">🚣 MeKong nghĩa tình</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <div class="form-label-row">
+              <label class="form-label" for="pcSenderName">Tên của bạn</label>
+              <span class="char-count" id="senderCount">0/13</span>
+            </div>
+            <input type="text" id="pcSenderName" class="form-control" maxlength="13" placeholder="Nhập tên của bạn (tối đa 13 ký tự)">
+          </div>
+
+          <div class="form-group">
+            <div class="form-label-row">
+              <span class="form-label">Giới tính</span>
+            </div>
+            <div class="gender-group">
+              <button type="button" class="gender-btn active" data-gender="Nữ">👩 Nữ</button>
+              <button type="button" class="gender-btn" data-gender="Nam">👨 Nam</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="form-label-row">
+              <label class="form-label" for="pcKidName">Tên của bé (Nếu cùng con làm postcard - Không bắt buộc)</label>
+              <span class="char-count" id="kidCount">0/13</span>
+            </div>
+            <input type="text" id="pcKidName" class="form-control" maxlength="13" placeholder="Nhập tên của bé (tối đa 13 ký tự)">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <div class="form-label-row">
+              <label class="form-label" for="pcMessage">Lời nhắn gửi yêu thương</label>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" class="btn-suggest" id="btnSuggestMsg">✨ Gợi ý lời nhắn</button>
+                <span class="char-count" id="msgCount">0/110</span>
+              </div>
+            </div>
+            <textarea id="pcMessage" class="form-control" rows="3" maxlength="110" placeholder="Viết lời chúc sức khỏe, học giỏi gửi tới các em nhỏ..."></textarea>
+          </div>
+        </div>
+
+        <div class="preview-wrap">
+          <div class="postcard-card bg-biendao" id="postcardPreview">
+            <div class="pc-top">
+              <span class="pc-logo">SỮA KUN CHO BẠN</span>
+              <span class="pc-region-pill" id="previewRegionLabel">🏝️ Biển Đảo xa xôi</span>
+            </div>
+
+            <div class="pc-message-box">
+              <div class="pc-to" id="previewTo">Gửi các em nhỏ Biển Đảo xa xôi 💛</div>
+              <div class="pc-quote" id="previewQuote">
+                Chúc các em luôn mạnh khỏe, chăm ngoan, học giỏi và cao lớn mỗi ngày cùng sữa KUN nhé!
+              </div>
+            </div>
+
+            <div class="pc-bottom">
+              <div class="pc-sender">
+                <span>Lời nhắn từ:</span>
+                <strong id="previewSender">Người bạn đồng hành</strong>
+              </div>
+              <div style="font-weight: 800; color: #fff;">#SuaKUNChoBan</div>
+            </div>
+          </div>
+
+          <div class="pc-actions">
+            <button type="button" class="btn-primary" id="btnDownloadPostcard">📥 Lưu Postcard về máy (.PNG)</button>
+            <button type="button" class="btn-secondary" id="btnCopyHashtag">📋 Sao chép #SuaKUNChoBan</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-banner">
+        <div class="info-box">
+          <h3>🛒 Chung tay qua mỗi thùng sữa KUN</h3>
+          <p>Mua 01 thùng <strong>KUN 100% Sữa Tươi</strong> trên Shopee, Lazada hoặc TikTok Shop đồng nghĩa với việc bạn đã cùng KUN đóng góp 01 thùng sữa cho các em bé ở vùng miền xa xôi.</p>
+        </div>
+        <div class="info-box">
+          <h3>🎠 Không chỉ trao sữa mà còn trao niềm vui</h3>
+          <p>KUN xây dựng thêm nhiều <strong>Sân chơi KUN</strong> tại các địa phương để các em nhỏ có thêm không gian vận động, vui chơi và phát triển toàn diện mỗi ngày.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container footer-grid">
+      <div>
+        <h4>SỮA KUN CHO BẠN - CÙNG EM CAO LỚN</h4>
+        <p>Đồng hành cùng chương trình "Thắp sáng ước mơ Thiếu Nhi Việt Nam" do Hội Đồng Đội Trung Ương tổ chức.</p>
+        <p style="margin-top: 8px; opacity: 0.85;">© Bản quyền thuộc về IDP - Thương hiệu Sữa KUN.</p>
+      </div>
+      <div>
+        <h4>Văn phòng Hà Nội</h4>
+        <p>Phòng 705, Tầng 7, tòa nhà IDMC (Ford Thăng Long), Số 105 Láng Hạ, Quận Đống Đa, TP. Hà Nội.</p>
+      </div>
+      <div>
+        <h4>Văn phòng Hồ Chí Minh</h4>
+        <p>217 Nguyễn Văn Thủ, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh.<br>Điện thoại: (84 28) 3823 8638</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- CỬA SỔ POPUP BÌNH CHỌN (NHẬP HỌ TÊN & SĐT) -->
+  <div class="modal-backdrop" id="voteModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle">Bình Chọn Trao Sữa KUN</h3>
+        <button type="button" class="btn-close" id="btnCloseModal" aria-label="Đóng">✕</button>
+      </div>
+
+      <div class="selected-region-pill" id="modalRegionInfo">
+        🏝️ Vùng miền: Biển Đảo xa xôi
+      </div>
+
+      <form id="voteForm" novalidate>
+        <div class="form-group">
+          <div class="form-label-row">
+            <label class="form-label" for="voterName">Họ và tên của bạn *</label>
+          </div>
+          <input type="text" id="voterName" class="form-control" placeholder="Ví dụ: Nguyễn Minh Anh" required>
+          <div class="error-msg" id="nameError">Vui lòng nhập họ tên của bạn (ít nhất 2 ký tự).</div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label-row">
+            <label class="form-label" for="voterPhone">Số điện thoại *</label>
+          </div>
+          <input type="tel" id="voterPhone" class="form-control" maxlength="10" placeholder="Ví dụ: 0912345678" required>
+          <div class="error-msg" id="phoneError">Vui lòng nhập số điện thoại hợp lệ (10 chữ số, bắt đầu bằng số 0).</div>
+        </div>
+
+        <button type="submit" id="btnSubmitVote" class="btn-primary" style="width: 100%; margin-top: 6px;">
+          💛 Xác nhận bình chọn & Viết lời nhắn
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- THÔNG BÁO NỔI (TOAST) -->
+  <div class="toast" id="toastBox" role="status" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
