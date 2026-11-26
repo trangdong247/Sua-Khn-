@@ -290,6 +290,7 @@ body {
   border: 2px solid rgba(255, 255, 255, 0.28);
   border-radius: 28px;
   padding: 28px;
+  position: relative;
 }
 
 .milk-pack-art {
@@ -298,6 +299,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .milk-box {
@@ -437,7 +439,7 @@ body {
   color: var(--text-muted);
 }
 
-/* TICKET & 60S FLOW */
+/* TICKET & OTP 60S */
 .ticket-wrapper {
   max-width: 720px;
   margin: 0 auto;
@@ -532,11 +534,6 @@ textarea:focus {
   border-color: var(--blue-main);
 }
 
-input:disabled {
-  background: #f4f7fb;
-  color: var(--text-muted);
-}
-
 .otp-info-banner {
   background: #f0f7ff;
   border: 1px solid #cde2ff;
@@ -550,7 +547,7 @@ input:disabled {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   background: var(--white);
   padding: 8px 12px;
   border-radius: 10px;
@@ -558,7 +555,7 @@ input:disabled {
 }
 
 .demo-sms-box strong {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   letter-spacing: 2px;
   color: var(--blue-dark);
 }
@@ -579,6 +576,10 @@ input:disabled {
   font-size: 1.2rem;
   color: var(--blue-main);
   font-weight: 900;
+}
+
+.timer-num.expired {
+  color: #e11d48;
 }
 
 .progress-track {
