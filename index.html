@@ -62,7 +62,7 @@
 
         <div class="hero-counters">
           <div class="counter-box">
-            <span class="counter-loc">📍 Tuyên Quang &amp; Toàn Quốc</span>
+            <span class="counter-loc">📍 Tuyên Quang & Toàn Quốc</span>
             <strong id="milkCounter">10.000.000</strong>
             <span>Hộp sữa đã được công nhận để trao tặng</span>
           </div>
@@ -77,10 +77,11 @@
       <div class="hero-visual">
         <div class="visual-card">
           <div class="milk-pack-art">
+            <div class="sun-burst"></div>
             <div class="milk-box">
               <div class="milk-logo">KUN</div>
               <div class="milk-type">100% SỮA TƯƠI</div>
-              <div class="milk-vol">180ml • Dinh dưỡng &amp; Yêu thương</div>
+              <div class="milk-vol">180ml • Dinh dưỡng & Yêu thương</div>
             </div>
             <div class="floating-note note-1">💌 “Chúc các em luôn vui khỏe!”</div>
             <div class="floating-note note-2">🥛 1 Chia sẻ = 1 Hộp sữa trao đi</div>
@@ -104,7 +105,7 @@
       </div>
 
       <div class="region-grid">
-        <article class="region-card">
+        <article class="region-card region-island">
           <div class="region-icon">🏝️</div>
           <h3>Biển Đảo</h3>
           <p class="region-sub">xa xôi</p>
@@ -114,7 +115,7 @@
           </button>
         </article>
 
-        <article class="region-card">
+        <article class="region-card region-central">
           <div class="region-icon">⛰️</div>
           <h3>Miền Trung</h3>
           <p class="region-sub">ruột thịt</p>
@@ -124,7 +125,7 @@
           </button>
         </article>
 
-        <article class="region-card">
+        <article class="region-card region-highland">
           <div class="region-icon">🌲</div>
           <h3>Tây Nguyên</h3>
           <p class="region-sub">nắng gió</p>
@@ -134,7 +135,7 @@
           </button>
         </article>
 
-        <article class="region-card">
+        <article class="region-card region-mekong">
           <div class="region-icon">🚤</div>
           <h3>MeKong</h3>
           <p class="region-sub">nghĩa tình</p>
@@ -152,25 +153,26 @@
     </div>
   </section>
 
-  <!-- 3. TẠO PHIẾU & XÁC NHẬN MÃ SAU 60 GIÂY -->
+  <!-- 3. TẠO PHIẾU THAM GIA & XÁC NHẬN OTP 60 GIÂY -->
   <section id="tao-phieu" class="section section-soft">
     <div class="container">
       <div class="section-head">
         <span class="section-kicker">ĐĂNG KÝ ĐỒNG HÀNH CÙNG KUN</span>
-        <h2>Tạo Phiếu &amp; Xác Nhận Mã (60 Giây)</h2>
-        <p>Nhập họ và tên, số điện thoại — sau 60 giây nhập mã xác nhận rồi hoàn tất phiếu.</p>
+        <h2>Tạo Phiếu Xác Nhận Đóng Góp & Trao Sữa</h2>
+        <p>Nhập họ tên, số điện thoại để nhận mã xác nhận trong 60 giây và hoàn tất phiếu ghi nhận đồng hành.</p>
       </div>
 
       <div class="ticket-wrapper">
+        <!-- Thanh bước -->
         <div class="stepper">
           <div class="step-item active" id="stepBadge1">
             <span class="step-num">1</span>
-            <span>Nhập họ tên &amp; SĐT</span>
+            <span>Nhập thông tin</span>
           </div>
           <div class="step-line"></div>
           <div class="step-item" id="stepBadge2">
             <span class="step-num">2</span>
-            <span>Chờ 60s &amp; nhập mã</span>
+            <span>Xác nhận 60s</span>
           </div>
           <div class="step-line"></div>
           <div class="step-item" id="stepBadge3">
@@ -200,34 +202,31 @@
               <option value="Miền Trung ruột thịt">Miền Trung ruột thịt</option>
               <option value="Tây Nguyên nắng gió">Tây Nguyên nắng gió</option>
               <option value="MeKong nghĩa tình">MeKong nghĩa tình</option>
-              <option value="Vùng núi cao &amp; Miền Bắc">Vùng núi cao &amp; Miền Bắc</option>
+              <option value="Vùng núi cao & Miền Bắc">Vùng núi cao & Miền Bắc</option>
             </select>
           </div>
 
           <p id="step1Error" class="error-msg"></p>
 
           <button type="submit" class="btn btn-primary btn-lg full-w">
-            Tạo phiếu &amp; đếm ngược 60 giây
+            Gửi mã xác nhận (60 giây)
           </button>
         </form>
 
-        <!-- BƯỚC 2 -->
+        <!-- BƯỚC 2: ĐẾM NGƯỢC 60 GIÂY -->
         <div id="ticketStep2" class="ticket-panel hidden">
           <div class="otp-info-banner">
-            <p id="otpWaitStatus">Đang đếm ngược 60 giây — sau 60s mã xác nhận sẽ sẵn sàng để bạn nhập.</p>
-            <p>Số điện thoại đăng ký: <strong id="displayPhone"></strong>.</p>
+            <p>Mã xác nhận 6 chữ số đã được gửi tới số điện thoại <strong id="displayPhone"></strong>.</p>
             <div class="demo-sms-box">
-              <span>🔑 Mã xác nhận:</span>
-              <strong id="demoOtpCode">Chờ 60s...</strong>
-              <button type="button" id="autoFillBtn" class="btn-link" onclick="autoFillOtp()" disabled>
-                Điền nhanh mã
-              </button>
+              <span>📩 Tin nhắn mẫu:</span>
+              <strong id="demoOtpCode">------</strong>
+              <button type="button" class="btn-link" onclick="autoFillOtp()">Điền nhanh mã</button>
             </div>
           </div>
 
           <div class="countdown-card">
             <div class="countdown-top">
-              <span>Đếm ngược 60 giây:</span>
+              <span>Thời gian hiệu lực của mã xác nhận:</span>
               <strong id="countdownText" class="timer-num">60s</strong>
             </div>
             <div class="progress-track">
@@ -244,18 +243,17 @@
               inputmode="numeric"
               maxlength="6"
               placeholder="• • • • • •"
-              disabled
             />
           </div>
 
           <p id="step2Error" class="error-msg"></p>
 
           <div class="otp-actions">
-            <button type="button" id="verifyBtn" class="btn btn-yellow btn-lg" onclick="handleVerifyOtp()" disabled>
+            <button type="button" id="verifyBtn" class="btn btn-yellow btn-lg" onclick="handleVerifyOtp()">
               Hoàn tất phiếu
             </button>
-            <button type="button" id="resendBtn" class="btn btn-outline" onclick="start60sTicketFlow()" disabled>
-              Gửi lại mã mới (60s)
+            <button type="button" id="resendBtn" class="btn btn-outline" onclick="resendOtp()" disabled>
+              Gửi lại mã mới
             </button>
             <button type="button" class="btn btn-ghost" onclick="resetTicketFlow()">
               Sửa thông tin
@@ -263,11 +261,11 @@
           </div>
         </div>
 
-        <!-- BƯỚC 3 -->
+        <!-- BƯỚC 3: HOÀN TẤT PHIẾU -->
         <div id="ticketStep3" class="ticket-panel hidden">
           <div class="receipt-card" id="receiptCard">
             <div class="receipt-header">
-              <span class="receipt-badge">✅ ĐÃ HOÀN TẤT PHIẾU</span>
+              <span class="receipt-badge">✅ ĐÃ XÁC NHẬN THÀNH CÔNG</span>
               <h3>PHIẾU GHI NHẬN ĐỒNG HÀNH CÙNG KUN</h3>
               <p class="receipt-id">Mã phiếu: <strong id="receiptCode">#KUN-000000</strong></p>
             </div>
@@ -286,16 +284,12 @@
                 <strong id="receiptRegion">—</strong>
               </div>
               <div class="receipt-row">
-                <span>Mã xác nhận đã nhập:</span>
-                <strong id="receiptOtp">—</strong>
-              </div>
-              <div class="receipt-row">
                 <span>Thời gian hoàn tất:</span>
                 <strong id="receiptTime">—</strong>
               </div>
               <div class="receipt-row">
                 <span>Đóng góp ghi nhận:</span>
-                <strong>+01 Hộp sữa KUN 100% Sữa Tươi &amp; Lời Nhắn Gửi</strong>
+                <strong>+01 Hộp sữa KUN 100% Sữa Tươi & Lời Nhắn Gửi</strong>
               </div>
             </div>
 
@@ -415,17 +409,17 @@
       </div>
 
       <div class="gallery-grid">
-        <div class="gallery-item">
+        <div class="gallery-item g-1">
           <span class="g-emoji">🥛😊</span>
           <h4>Trao sữa tận tay các em nhỏ</h4>
           <p>Những thùng sữa KUN 100% Sữa Tươi đến với điểm trường vùng cao &amp; hải đảo.</p>
         </div>
-        <div class="gallery-item">
+        <div class="gallery-item g-2">
           <span class="g-emoji">🎨🛝</span>
           <h4>Khánh thành Sân chơi KUN</h4>
           <p>Không gian vận động rực rỡ sắc màu gắn đầy những lời nhắn yêu thương.</p>
         </div>
-        <div class="gallery-item">
+        <div class="gallery-item g-3">
           <span class="g-emoji">👨‍👩‍👧‍👦💌</span>
           <h4>Ba mẹ cùng con viết Postcard</h4>
           <p>Gieo mầm lòng nhân ái và tinh thần sẻ chia từ những bài học đầu đời.</p>
