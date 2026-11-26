@@ -1,641 +1,426 @@
 // =========================================================
-// CẤU HÌNH ĐỒNG BỘ DỮ LIỆU CHUNG & THÔNG BÁO TELEGRAM
+// 1. CẤU HÌNH TELEGRAM BOT & TÙY CHỌN ĐỒNG BỘ FIREBASE
 // =========================================================
-const FIREBASE_DB_URL = "";
-const TELEGRAM_BOT_TOKEN = "9077621464:AAGSBAFQZN3iIbCxkFvRnU6mQYs3OkMMqHU";
-const TELEGRAM_CHAT_ID = "6713370589";
+const CONFIG = {
+  telegramBotToken: "DIEN_TOKEN_BOT_CUA_BAN_VAO_DAY".trim(), // Ví dụ: "7123456789:AAH..."
+  telegramChatId: "6713370589",
+  // Nếu muốn đồng bộ dữ liệu chung giữa nhiều người dùng, điền URL Firebase Realtime Database:
+  // Ví dụ: "https://sua-kun-247-default-rtdb.asia-southeast1.firebasedatabase.app"
+  firebaseDbUrl: ""
+};
 
-async function sendVoteToTelegram(voteRecord, regionFullName) {
-  const token = String(TELEGRAM_BOT_TOKEN || "").trim();
-  const chatId = String(TELEGRAM_CHAT_ID || "").trim();
-  if (!token || !chatId) return;
+const STORAGE_KEY = "sua_kun_cho_ban_state_v1";
 
-  const text = [
-    "🥛 CÓ LƯỢT BÌNH CHỌN SỮA KUN MỚI!",
-    `👤 Họ tên: ${voteRecord.name}`,
-    `📞 SĐT: ${voteRecord.phone}`,
-    `📍 Vùng miền: ${regionFullName}`,
-    `⏰ Thời gian: ${voteRecord.time}`
-  ].join("\n");
+const DEFAULT_REGIONS = [
+  { id: "biendao", name: "Biển Đảo", label: "🏝️ Biển Đảo & Hải Đảo", count: 35200, goal: 50000 },
+  { id: "taybac", name: "Tây Bắc", label: "⛰️ Vùng Cao Tây Bắc", count: 41800, goal: 50000 },
+  { id: "taynguyen", name: "Tây Nguyên", label: "🌲 Đại Ngàn Tây Nguyên", count: 26950, goal: 40000 },
+  { id: "mientrung", name: "Miền Trung", label: "🌊 Miền Trung Khó Khăn", count: 24500, goal: 40000 }
+];
 
-  const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${encodeURIComponent(chatId)}&text=${encodeURIComponent(text)}`;
+const DEFAULT_RECENT = [
+  {
+    fullname: "Trần Minh Anh",
+    region: "Biển Đảo",
+    message: "Gửi thật nhiều yêu thương và hộp sữa mát lành đến các bạn nhỏ hải đảo!",
+    time: "Vừa xong"
+  },
+  {
+    fullname: "Lê Hoàng Nam",
+    region: "Tây Bắc",
+    message: "Chúc các em vùng cao luôn khỏe mạnh, đến trường thật vui mỗi ngày.",
+    time: "5 phút trước"
+  }
+];
 
+// =========================================================
+// 2. QUẢN LÝ STATE & LƯU TRỮ
+// =========================================================
+function loadState() {
   try {
-    const res = await fetch(url, { method: "GET", keepalive: true });
-    if (!res.ok) {
-      console.warn("Telegram trả về mã lỗi:", res.status);
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      return {
+        regions: structuredClone(DEFAULT_REGIONS),
+        recent: structuredClone(DEFAULT_RECENT),
+        totalVotes: 0
+      };
     }
+    const parsed = JSON.parse(raw);
+    return {
+      regions: Array.isArray(parsed.regions) && parsed.regions.length ? parsed.regions : structuredClone(DEFAULT_REGIONS),
+      recent: Array.isArray(parsed.recent) ? parsed.recent : structuredClone(DEFAULT_RECENT),
+      totalVotes: Number(parsed.totalVotes) || 0
+    };
   } catch (err) {
-    // Dự phòng bằng Image ping nếu trình duyệt chặn fetch cross-origin
-    try {
-      const img = new Image();
-      img.src = url;
-    } catch (_) {}
-    console.warn("Lỗi gửi Telegram:", err);
+    console.warn("Không đọc được localStorage, dùng dữ liệu mặc định:", err);
+    return {
+      regions: structuredClone(DEFAULT_REGIONS),
+      recent: structuredClone(DEFAULT_RECENT),
+      totalVotes: 0
+    };
   }
 }
 
-const REGIONS = [
-  {
-    id: 'biendao',
-    name: 'Biển Đảo',
-    sub: 'xa xôi',
-    fullName: 'Biển Đảo xa xôi',
-    icon: '🏝️',
-    badge: 'Hải đảo Tổ quốc',
-    bgClass: 'bg-biendao',
-    color: '#0284c7',
-    gradient: ['#0284c7', '#06b6d4'],
-    desc: 'Gửi những hộp sữa KUN 100% Sữa Tươi vượt sóng ra khơi, tiếp thêm dinh dưỡng cho các em nhỏ nơi đảo xa.',
-    baseVotes: 3840
-  },
-  {
-    id: 'mientrung',
-    name: 'Miền Trung',
-    sub: 'ruột thịt',
-    fullName: 'Miền Trung ruột thịt',
-    icon: '☀️',
-    badge: 'Khúc ruột miền Trung',
-    bgClass: 'bg-mientrung',
-    color: '#f97316',
-    gradient: ['#f97316', '#f59e0b'],
-    desc: 'Trao nguồn năng lượng tươi mát và lời động viên ấm áp tới các em nhỏ vùng nắng gió miền Trung.',
-    baseVotes: 3420
-  },
-  {
-    id: 'taynguyen',
-    name: 'Tây Nguyên',
-    sub: 'nắng gió',
-    fullName: 'Tây Nguyên nắng gió',
-    icon: '🌲',
-    badge: 'Đại ngàn Tây Nguyên',
-    bgClass: 'bg-taynguyen',
-    color: '#16a34a',
-    gradient: ['#15803d', '#65a30d'],
-    desc: 'Đồng hành cùng các em nhỏ buôn làng Tây Nguyên cao lớn, khỏe mạnh và vui tới trường mỗi ngày.',
-    baseVotes: 2790
-  },
-  {
-    id: 'mekong',
-    name: 'MeKong',
-    sub: 'nghĩa tình',
-    fullName: 'MeKong nghĩa tình',
-    icon: '🚣',
-    badge: 'Miền Tây sông nước',
-    bgClass: 'bg-mekong',
-    color: '#0d9488',
-    gradient: ['#0d9488', '#10b981'],
-    desc: 'Mang dòng sữa mát lành cùng sân chơi KUN rộn rã tiếng cười đến với thiếu nhi vùng sông nước Cửu Long.',
-    baseVotes: 2430
-  }
-];
-
-const SUGGESTED_MESSAGES = [
-  'Chúc các em luôn mạnh khỏe, chăm ngoan, học giỏi và cao lớn mỗi ngày cùng sữa KUN nhé!',
-  'Gửi tới các em cái ôm thật ấm áp! Chúc các em luôn vui tươi, tự tin theo đuổi ước mơ của mình.',
-  'Mỗi ngày uống sữa KUN thật ngon để luôn khỏe mạnh, năng động và rạng rỡ nụ cười các em nhé!',
-  'Dù ở nơi đâu, các bạn nhỏ cũng luôn có thật nhiều yêu thương đồng hành. Cố lên các em nhé!'
-];
-
-const INITIAL_VOTERS = [
-  { name: 'Trần Thu Hà', phone: '0904123889', regionId: 'biendao', time: 'Vừa xong' },
-  { name: 'Lê Hoàng Nam', phone: '0987654321', regionId: 'mientrung', time: '2 phút trước' },
-  { name: 'Nguyễn Ngọc Ánh', phone: '0912889456', regionId: 'taynguyen', time: '5 phút trước' },
-  { name: 'Phạm Gia Huy', phone: '0935771204', regionId: 'mekong', time: '9 phút trước' }
-];
-
-const STORAGE_KEY = 'sua_kun_cho_ban_state_v2';
-
-function getDefaultState() {
-  const defaultVotes = {};
-  REGIONS.forEach(r => { defaultVotes[r.id] = r.baseVotes; });
-  return {
-    votes: defaultVotes,
-    voters: [...INITIAL_VOTERS]
-  };
-}
-
-function loadLocalState() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (saved && saved.votes && Array.isArray(saved.voters)) {
-      return saved;
-    }
-  } catch (e) {}
-  return getDefaultState();
-}
-
-function saveLocalState() {
+function saveState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch (e) {}
-}
-
-let state = loadLocalState();
-let activeModalRegionId = 'biendao';
-let selectedGender = 'Nữ';
-
-// =========================================================
-// ĐỒNG BỘ DỮ LIỆU CHUNG QUA FIREBASE (NẾU ĐÃ GẮN LINK)
-// =========================================================
-function getCleanDbUrl() {
-  return FIREBASE_DB_URL.trim().replace(/\/$/, '');
-}
-
-async function syncFromCloud() {
-  const baseUrl = getCleanDbUrl();
-  if (!baseUrl) return;
-  try {
-    const res = await fetch(`${baseUrl}/kunVotes.json`);
-    if (!res.ok) return;
-    const data = await res.json();
-    if (!data) return;
-
-    const merged = getDefaultState();
-    const list = Object.values(data);
-    list.forEach(item => {
-      if (item && item.regionId && merged.votes[item.regionId] !== undefined) {
-        merged.votes[item.regionId] += 1;
-      }
-    });
-
-    const recentCloud = list
-      .filter(item => item && item.name && item.phone && item.regionId)
-      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-    merged.voters = [...recentCloud, ...INITIAL_VOTERS];
-    state = merged;
-    saveLocalState();
-    renderAll();
-    const statusEl = document.getElementById('syncStatusText');
-    if (statusEl) statusEl.textContent = 'Đồng bộ trực tuyến toàn cộng đồng';
   } catch (err) {
-    console.warn('Không thể tải dữ liệu trực tuyến:', err);
+    console.warn("Không lưu được localStorage:", err);
   }
 }
 
-async function pushVoteToCloud(voteRecord) {
-  const baseUrl = getCleanDbUrl();
-  if (!baseUrl) return false;
-  const res = await fetch(`${baseUrl}/kunVotes.json`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(voteRecord)
-  });
-  return res.ok;
-}
+let state = loadState();
+let lastSubmittedData = null;
+
+// DOM Elements
+const regionListEl = document.getElementById("region-list");
+const recentListEl = document.getElementById("recent-list");
+const totalMilkEl = document.getElementById("total-milk");
+const totalVotesEl = document.getElementById("total-votes");
+const resetDemoBtn = document.getElementById("reset-demo-btn");
+
+const form = document.getElementById("kun-form");
+const fullnameInput = document.getElementById("fullname");
+const phoneInput = document.getElementById("phone");
+const regionSelect = document.getElementById("region");
+const msgInput = document.getElementById("message");
+const agreeShareCheckbox = document.getElementById("agree-share");
+const charNum = document.getElementById("char-num");
+const statusMsg = document.getElementById("status-msg");
+const submitBtn = document.getElementById("submit-btn");
+
+const modal = document.getElementById("postcard-modal");
+const closeModal = document.getElementById("close-modal");
+const canvas = document.getElementById("postcard-canvas");
+const downloadBtn = document.getElementById("download-btn");
+const copyCaptionBtn = document.getElementById("copy-caption-btn");
+const copyFeedback = document.getElementById("copy-feedback");
 
 // =========================================================
-// TIỆN ÍCH HIỂN THỊ
+// 3. RENDER GIAO DIỆN TIẾN ĐỘ & LỜI NHẮN GẦN ĐÂY
 // =========================================================
-function formatNumber(num) {
-  return num.toLocaleString('vi-VN');
+function renderRegions() {
+  const sorted = [...state.regions].sort((a, b) => (b.count / b.goal) - (a.count / a.goal));
+
+  regionListEl.innerHTML = sorted
+    .map((item, idx) => {
+      const percent = Math.min((item.count / item.goal) * 100, 100);
+      const rankClass = idx === 0 ? "rank-badge top-1" : "rank-badge";
+      return `
+        <div class="region-item" data-region="${escapeHtml(item.name)}">
+          <div class="region-head">
+            <span>
+              <span class="${rankClass}">#${idx + 1}</span>
+              ${escapeHtml(item.label)}
+            </span>
+            <span class="count">
+              <b>${item.count.toLocaleString("vi-VN")}</b> / ${item.goal.toLocaleString("vi-VN")} hộp (${percent.toFixed(1)}%)
+            </span>
+          </div>
+          <div class="bar">
+            <div class="fill" style="width: ${percent.toFixed(1)}%"></div>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+
+  const totalMilk = state.regions.reduce((sum, r) => sum + r.count, 0);
+  totalMilkEl.textContent = totalMilk.toLocaleString("vi-VN");
+  totalVotesEl.textContent = state.totalVotes.toLocaleString("vi-VN");
 }
 
-function maskPhone(phone) {
-  if (!phone || phone.length < 7) return phone;
-  return phone.slice(0, 3) + '***' + phone.slice(-4);
+function renderRecent() {
+  if (!state.recent.length) {
+    recentListEl.innerHTML = `<li class="recent-item">Chưa có lời nhắn công khai nào. Hãy là người đầu tiên gửi lời nhắn!</li>`;
+    return;
+  }
+
+  recentListEl.innerHTML = state.recent
+    .slice(0, 8)
+    .map(
+      (entry) => `
+        <li class="recent-item">
+          <div class="recent-top">
+            <span class="recent-author">${escapeHtml(entry.fullname)}</span>
+            <span class="recent-region">${escapeHtml(entry.region)}</span>
+          </div>
+          <p class="recent-msg">"${escapeHtml(entry.message)}"</p>
+          <span class="recent-time">${escapeHtml(entry.time)}</span>
+        </li>
+      `
+    )
+    .join("");
 }
 
 function escapeHtml(str) {
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function showToast(message) {
-  const toast = document.getElementById('toastBox');
-  if (!toast) return;
-  toast.textContent = message;
-  toast.classList.add('show');
-  clearTimeout(toast._timer);
-  toast._timer = setTimeout(() => {
-    toast.classList.remove('show');
-  }, 3800);
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 // =========================================================
-// RENDER GIAO DIỆN
+// 4. GỬI DỮ LIỆU VỀ TELEGRAM & FIREBASE (TÙY CHỌN)
 // =========================================================
-function renderAll() {
-  const totalVotes = Object.values(state.votes).reduce((a, b) => a + b, 0);
-  const extraVotes = Math.max(0, totalVotes - REGIONS.reduce((a, b) => a + b.baseVotes, 0));
-
-  const elParticipants = document.getElementById('totalParticipants');
-  const elMilk = document.getElementById('totalMilkBoxes');
-  const elKids = document.getElementById('totalKids');
-  if (elParticipants) elParticipants.textContent = formatNumber(totalVotes);
-  if (elMilk) elMilk.textContent = formatNumber(10000000 + extraVotes * 10);
-  if (elKids) elKids.textContent = formatNumber(5000000 + extraVotes * 5);
-
-  const grid = document.getElementById('regionsGrid');
-  if (grid) {
-    grid.innerHTML = REGIONS.map(region => {
-      const count = state.votes[region.id] || 0;
-      const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 25;
-      return `
-        <article class="region-card">
-          <div class="region-banner ${region.bgClass}">
-            <span class="region-badge">${region.badge}</span>
-            <div class="region-icon">${region.icon}</div>
-          </div>
-          <div class="region-body">
-            <h3 class="region-title">${region.name}</h3>
-            <div class="region-tagline">${region.sub}</div>
-            <p class="region-desc">${region.desc}</p>
-            <div class="region-stats">
-              <div class="stat-row">
-                <span>${formatNumber(count)} lượt chọn</span>
-                <span style="color: ${region.color};">${pct}%</span>
-              </div>
-              <div class="progress-track">
-                <div class="progress-fill" style="width: ${pct}%; background: ${region.color};"></div>
-              </div>
-            </div>
-            <button type="button" class="btn-vote-region" data-region="${region.id}">
-              💌 Trao "Lời Nhắn Gửi" Yêu Thương
-            </button>
-          </div>
-        </article>
-      `;
-    }).join('');
-
-    grid.querySelectorAll('.btn-vote-region').forEach(btn => {
-      btn.addEventListener('click', () => openVoteModal(btn.dataset.region));
-    });
+async function sendToTelegram(data) {
+  const token = CONFIG.telegramBotToken;
+  if (!token || token === "DIEN_TOKEN_BOT_CUA_BAN_VAO_DAY") {
+    throw new Error("Chưa cấu hình telegramBotToken trong script.js");
   }
 
-  const rankingEl = document.getElementById('rankingList');
-  if (rankingEl) {
-    const sorted = [...REGIONS].sort((a, b) => (state.votes[b.id] || 0) - (state.votes[a.id] || 0));
-    rankingEl.innerHTML = sorted.map((r, idx) => {
-      const count = state.votes[r.id] || 0;
-      const pct = totalVotes > 0 ? ((count / totalVotes) * 100).toFixed(1) : 25;
-      return `
-        <div class="rank-item">
-          <div class="rank-num">${idx + 1}</div>
-          <div class="rank-info">
-            <div class="rank-name">${r.icon} ${r.fullName}</div>
-            <div class="rank-votes">${formatNumber(count)} lượt bình chọn (${pct}%)</div>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
+  const text = [
+    "🥛 *CÓ LƯỢT BÌNH CHỌN SỮA KUN MỚI*",
+    `👤 *Họ tên:* ${data.fullname}`,
+    `📞 *SĐT:* ${data.phone}`,
+    `📍 *Vùng miền:* ${data.region}`,
+    `💌 *Lời nhắn:* ${data.message}`,
+    `⏰ *Thời gian:* ${new Date().toLocaleString("vi-VN")}`
+  ].join("\n");
 
-  const voterListEl = document.getElementById('voterList');
-  if (voterListEl) {
-    voterListEl.innerHTML = state.voters.slice(0, 25).map(v => {
-      const r = REGIONS.find(item => item.id === v.regionId) || REGIONS[0];
-      return `
-        <div class="voter-item">
-          <div>
-            <div class="voter-main">${escapeHtml(v.name)} <span class="voter-phone">(${maskPhone(v.phone)})</span></div>
-            <div style="font-size: 0.76rem; color: var(--text-muted);">${escapeHtml(v.time || 'Vừa tham gia')}</div>
-          </div>
-          <span class="voter-tag">${r.icon} ${r.name}</span>
-        </div>
-      `;
-    }).join('');
-  }
-}
-
-// =========================================================
-// XỬ LÝ POPUP BÌNH CHỌN (NHẬP HỌ TÊN & SĐT)
-// =========================================================
-const voteModal = document.getElementById('voteModal');
-const voteForm = document.getElementById('voteForm');
-const voterNameInput = document.getElementById('voterName');
-const voterPhoneInput = document.getElementById('voterPhone');
-const nameError = document.getElementById('nameError');
-const phoneError = document.getElementById('phoneError');
-const btnSubmitVote = document.getElementById('btnSubmitVote');
-
-function openVoteModal(regionId) {
-  activeModalRegionId = regionId;
-  const r = REGIONS.find(item => item.id === regionId) || REGIONS[0];
-  const modalInfo = document.getElementById('modalRegionInfo');
-  if (modalInfo) modalInfo.textContent = `${r.icon} Vùng miền bình chọn: ${r.fullName}`;
-  if (nameError) nameError.style.display = 'none';
-  if (phoneError) phoneError.style.display = 'none';
-  if (voteModal) {
-    voteModal.classList.add('open');
-    voteModal.setAttribute('aria-hidden', 'false');
-  }
-  if (voterNameInput) voterNameInput.focus();
-}
-
-function closeVoteModal() {
-  if (!voteModal) return;
-  voteModal.classList.remove('open');
-  voteModal.setAttribute('aria-hidden', 'true');
-}
-
-const btnCloseModal = document.getElementById('btnCloseModal');
-if (btnCloseModal) btnCloseModal.addEventListener('click', closeVoteModal);
-if (voteModal) {
-  voteModal.addEventListener('click', (e) => {
-    if (e.target === voteModal) closeVoteModal();
+  const url = `https://api.telegram.org/bot${encodeURIComponent(token)}/sendMessage`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: CONFIG.telegramChatId,
+      text,
+      parse_mode: "Markdown"
+    })
   });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Telegram HTTP ${response.status}: ${errText}`);
+  }
 }
 
-if (voterPhoneInput) {
-  voterPhoneInput.addEventListener('input', () => {
-    voterPhoneInput.value = voterPhoneInput.value.replace(/\D/g, '').slice(0, 10);
-  });
-}
+async function syncToFirebase(data) {
+  const baseUrl = (CONFIG.firebaseDbUrl || "").replace(/\/+$/, "");
+  if (!baseUrl) return;
 
-if (voteForm) {
-  voteForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const fullName = voterNameInput ? voterNameInput.value.trim() : '';
-    const phone = voterPhoneInput ? voterPhoneInput.value.trim() : '';
-
-    let valid = true;
-    if (fullName.length < 2) {
-      if (nameError) nameError.style.display = 'block';
-      valid = false;
-    } else {
-      if (nameError) nameError.style.display = 'none';
-    }
-
-    if (!/^0\d{9}$/.test(phone)) {
-      if (phoneError) {
-        phoneError.textContent = 'Vui lòng nhập số điện thoại hợp lệ (10 chữ số, bắt đầu bằng số 0).';
-        phoneError.style.display = 'block';
-      }
-      valid = false;
-    } else {
-      if (phoneError) phoneError.style.display = 'none';
-    }
-
-    if (!valid) return;
-
-    const existed = state.voters.find(v => v.phone === phone);
-    if (existed) {
-      const prevRegion = REGIONS.find(r => r.id === existed.regionId);
-      if (phoneError) {
-        phoneError.textContent = `Số điện thoại này đã bình chọn cho "${prevRegion ? prevRegion.fullName : 'vùng miền'}" rồi nhé!`;
-        phoneError.style.display = 'block';
-      }
-      return;
-    }
-
-    const now = new Date();
-    const timeLabel = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} • ${now.getDate()}/${now.getMonth() + 1}`;
-    const newVote = {
-      name: fullName,
-      phone: phone,
-      regionId: activeModalRegionId,
-      time: timeLabel,
+  await fetch(`${baseUrl}/submissions.json`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      fullname: data.fullname,
+      phone: data.phone,
+      region: data.region,
+      message: data.message,
       createdAt: Date.now()
-    };
-
-    if (btnSubmitVote) {
-      btnSubmitVote.disabled = true;
-      btnSubmitVote.textContent = '⏳ Đang gửi bình chọn...';
-    }
-
-    if (getCleanDbUrl()) {
-      try {
-        await pushVoteToCloud(newVote);
-        await syncFromCloud();
-      } catch (err) {
-        state.votes[activeModalRegionId] = (state.votes[activeModalRegionId] || 0) + 1;
-        state.voters.unshift(newVote);
-        saveLocalState();
-        renderAll();
-      }
-    } else {
-      state.votes[activeModalRegionId] = (state.votes[activeModalRegionId] || 0) + 1;
-      state.voters.unshift(newVote);
-      saveLocalState();
-      renderAll();
-    }
-
-    const chosenRegion = REGIONS.find(r => r.id === activeModalRegionId) || REGIONS[0];
-    await sendVoteToTelegram(newVote, chosenRegion.fullName);
-
-    if (btnSubmitVote) {
-      btnSubmitVote.disabled = false;
-      btnSubmitVote.textContent = '💛 Xác nhận bình chọn & Viết lời nhắn';
-    }
-
-    closeVoteModal();
-    showToast(`🎉 Cảm ơn ${fullName}! Bạn đã trao yêu thương tới ${chosenRegion.fullName}.`);
-
-    const pcRegionEl = document.getElementById('pcRegion');
-    const pcSenderEl = document.getElementById('pcSenderName');
-    if (pcRegionEl) pcRegionEl.value = activeModalRegionId;
-    if (pcSenderEl) {
-      const shortName = fullName.split(' ').slice(-2).join(' ').slice(0, 13);
-      pcSenderEl.value = shortName;
-    }
-    updatePostcardPreview();
-
-    if (voterNameInput) voterNameInput.value = '';
-    if (voterPhoneInput) voterPhoneInput.value = '';
-    const postcardSection = document.getElementById('tao-postcard');
-    if (postcardSection) postcardSection.scrollIntoView({ behavior: 'smooth' });
+    })
   });
 }
 
 // =========================================================
-// TRÌNH TẠO POSTCARD & XUẤT ẢNH .PNG
+// 5. VẼ THIỆP CHỨNG NHẬN PNG TRÊN CANVAS
 // =========================================================
-const pcRegion = document.getElementById('pcRegion');
-const pcSenderName = document.getElementById('pcSenderName');
-const pcKidName = document.getElementById('pcKidName');
-const pcMessage = document.getElementById('pcMessage');
-const postcardPreview = document.getElementById('postcardPreview');
+function generatePostcard({ fullname, region, message }) {
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width;
+  const h = canvas.height;
 
-function updatePostcardPreview() {
-  const r = REGIONS.find(item => item.id === (pcRegion && pcRegion.value)) || REGIONS[0];
-  const sender = pcSenderName ? pcSenderName.value.trim() : '';
-  const kid = pcKidName ? pcKidName.value.trim() : '';
-  const msg = pcMessage ? pcMessage.value.trim() : '';
+  // Nền xanh KUN
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, "#0077e6");
+  grad.addColorStop(1, "#003b80");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
 
-  const senderCountEl = document.getElementById('senderCount');
-  const kidCountEl = document.getElementById('kidCount');
-  const msgCountEl = document.getElementById('msgCount');
-  if (senderCountEl && pcSenderName) senderCountEl.textContent = `${pcSenderName.value.length}/13`;
-  if (kidCountEl && pcKidName) kidCountEl.textContent = `${pcKidName.value.length}/13`;
-  if (msgCountEl && pcMessage) msgCountEl.textContent = `${pcMessage.value.length}/110`;
-
-  if (postcardPreview) postcardPreview.className = `postcard-card ${r.bgClass}`;
-  const previewRegionLabel = document.getElementById('previewRegionLabel');
-  const previewTo = document.getElementById('previewTo');
-  const previewQuote = document.getElementById('previewQuote');
-  const previewSender = document.getElementById('previewSender');
-
-  if (previewRegionLabel) previewRegionLabel.textContent = `${r.icon} ${r.fullName}`;
-  if (previewTo) previewTo.textContent = `Gửi các em nhỏ ${r.fullName} 💛`;
-  if (previewQuote) {
-    previewQuote.textContent =
-      msg || 'Chúc các em luôn mạnh khỏe, chăm ngoan, học giỏi và cao lớn mỗi ngày cùng sữa KUN nhé!';
-  }
-
-  const prefix = selectedGender === 'Nam' ? 'Anh/Chú' : 'Chị/Cô';
-  if (previewSender) {
-    if (sender && kid) {
-      previewSender.textContent = `${prefix} ${sender} & bé ${kid}`;
-    } else if (sender) {
-      previewSender.textContent = `${prefix} ${sender}`;
-    } else if (kid) {
-      previewSender.textContent = `Bé ${kid}`;
-    } else {
-      previewSender.textContent = 'Người bạn đồng hành';
-    }
-  }
-}
-
-[pcRegion, pcSenderName, pcKidName, pcMessage].forEach(el => {
-  if (!el) return;
-  el.addEventListener('input', updatePostcardPreview);
-  el.addEventListener('change', updatePostcardPreview);
-});
-
-document.querySelectorAll('.gender-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    selectedGender = btn.dataset.gender;
-    updatePostcardPreview();
-  });
-});
-
-let suggestIdx = 0;
-const btnSuggestMsg = document.getElementById('btnSuggestMsg');
-if (btnSuggestMsg) {
-  btnSuggestMsg.addEventListener('click', () => {
-    if (pcMessage) {
-      pcMessage.value = SUGGESTED_MESSAGES[suggestIdx % SUGGESTED_MESSAGES.length];
-      suggestIdx++;
-      updatePostcardPreview();
-    }
-  });
-}
-
-const btnCopyHashtag = document.getElementById('btnCopyHashtag');
-if (btnCopyHashtag) {
-  btnCopyHashtag.addEventListener('click', () => {
-    navigator.clipboard?.writeText('#SuaKUNChoBan #CungEmCaoLon');
-    showToast('📋 Đã sao chép hashtag #SuaKUNChoBan #CungEmCaoLon!');
-  });
-}
-
-const btnDownloadPostcard = document.getElementById('btnDownloadPostcard');
-if (btnDownloadPostcard) {
-  btnDownloadPostcard.addEventListener('click', () => {
-    const r = REGIONS.find(item => item.id === (pcRegion && pcRegion.value)) || REGIONS[0];
-    const canvas = document.createElement('canvas');
-    canvas.width = 1000;
-    canvas.height = 750;
-    const ctx = canvas.getContext('2d');
-
-    const grad = ctx.createLinearGradient(0, 0, 1000, 750);
-    grad.addColorStop(0, r.gradient[0]);
-    grad.addColorStop(1, r.gradient[1]);
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 1000, 750);
-
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 18;
-    ctx.strokeRect(24, 24, 952, 702);
-
-    ctx.fillStyle = '#FFD100';
-    roundRect(ctx, 64, 60, 290, 56, 28, true);
-    ctx.fillStyle = '#003D82';
-    ctx.font = 'bold 26px sans-serif';
-    ctx.fillText('SỮA KUN CHO BẠN', 92, 97);
-
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
-    roundRect(ctx, 620, 60, 316, 56, 28, true);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 24px sans-serif';
-    ctx.fillText(`${r.icon} ${r.fullName}`, 648, 96);
-
-    ctx.fillStyle = 'rgba(255,255,255,0.96)';
-    roundRect(ctx, 64, 165, 872, 410, 32, true);
-
-    ctx.fillStyle = '#FF6B00';
-    ctx.font = 'bold 24px sans-serif';
-    ctx.fillText(`GỬI CÁC EM NHỎ ${r.fullName.toUpperCase()} 💛`, 104, 225);
-
-    ctx.fillStyle = '#003D82';
-    ctx.font = 'bold 34px sans-serif';
-    const quoteEl = document.getElementById('previewQuote');
-    const quoteText = quoteEl ? quoteEl.textContent : '';
-    wrapText(ctx, quoteText, 104, 295, 790, 48);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 24px sans-serif';
-    ctx.fillText('Lời nhắn từ:', 68, 632);
-
-    ctx.fillStyle = '#FFD100';
-    ctx.font = 'bold 34px sans-serif';
-    const senderEl = document.getElementById('previewSender');
-    ctx.fillText(senderEl ? senderEl.textContent : '', 68, 678);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 26px sans-serif';
-    ctx.fillText('#SuaKUNChoBan', 710, 676);
-
-    const link = document.createElement('a');
-    link.download = `postcard-sua-kun-${r.id}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    showToast('📥 Đã lưu ảnh Postcard Sữa KUN về máy của bạn!');
-  });
-}
-
-function roundRect(ctx, x, y, width, height, radius, fill) {
+  // Vòng trang trí nhẹ
+  ctx.fillStyle = "rgba(255, 204, 0, 0.14)";
   ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + width - radius, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-  ctx.lineTo(x + width, y + height - radius);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-  ctx.lineTo(x + radius, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
-  ctx.closePath();
-  if (fill) ctx.fill();
+  ctx.arc(80, 75, 110, 0, Math.PI * 2);
+  ctx.arc(w - 80, h - 75, 130, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Thẻ trắng trung tâm
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.roundRect(40, 40, w - 80, h - 80, 28);
+  ctx.fill();
+
+  // Viền vàng
+  ctx.strokeStyle = "#ffcc00";
+  ctx.lineWidth = 7;
+  ctx.stroke();
+
+  // Badge đầu thiệp
+  ctx.fillStyle = "#ff6b00";
+  ctx.font = "900 24px Nunito, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("CHỨNG NHẬN ĐỒNG HÀNH • SỮA KUN CHO BẠN", w / 2, 102);
+
+  // Tên người tham gia
+  ctx.fillStyle = "#0055b8";
+  ctx.font = "900 38px Nunito, sans-serif";
+  ctx.fillText(fullname.toUpperCase(), w / 2, 162);
+
+  // Vùng miền
+  ctx.fillStyle = "#334155";
+  ctx.font = "700 22px Nunito, sans-serif";
+  ctx.fillText(`Đã gửi lời nhắn & góp sữa đến trẻ em: ${region}`, w / 2, 206);
+
+  // Khung lời nhắn
+  ctx.fillStyle = "#f0f7ff";
+  ctx.beginPath();
+  ctx.roundRect(88, 236, w - 176, 178, 18);
+  ctx.fill();
+
+  // Nội dung lời nhắn xuống dòng tự động
+  ctx.fillStyle = "#1e293b";
+  ctx.font = "italic 700 23px Nunito, sans-serif";
+  wrapText(ctx, `"${message}"`, w / 2, 286, w - 220, 34);
+
+  // Hashtag & thương hiệu chân thiệp
+  ctx.fillStyle = "#0066cc";
+  ctx.font = "900 24px Nunito, sans-serif";
+  ctx.fillText("#SuaKUNChoBan  •  LOF International Dairy Products", w / 2, 466);
 }
 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-  const words = text.split(' ');
-  let line = '';
-  for (let n = 0; n < words.length; n++) {
-    const testLine = line + words[n] + ' ';
-    const metrics = ctx.measureText(testLine);
-    if (metrics.width > maxWidth && n > 0) {
-      ctx.fillText(line, x, y);
-      line = words[n] + ' ';
-      y += lineHeight;
+  const words = text.split(/\s+/);
+  let line = "";
+  let currentY = y;
+
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line + words[i] + " ";
+    if (ctx.measureText(testLine).width > maxWidth && i > 0) {
+      ctx.fillText(line.trim(), x, currentY);
+      line = words[i] + " ";
+      currentY += lineHeight;
     } else {
       line = testLine;
     }
   }
-  ctx.fillText(line, x, y);
+  ctx.fillText(line.trim(), x, currentY);
 }
 
-renderAll();
-updatePostcardPreview();
-if (getCleanDbUrl()) {
-  syncFromCloud();
-  setInterval(syncFromCloud, 6000);
-}
-```[cite: 1]
+// =========================================================
+// 6. SỰ KIỆN FORM, MODAL & NÚT TẢI / SAO CHÉP
+// =========================================================
+msgInput.addEventListener("input", () => {
+  charNum.textContent = String(msgInput.value.length);
+});
 
----
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-### Cách cập nhật và kiểm tra lại
-* **Dán đè toàn bộ tệp `script.js`** trên nhánh `main` của kho `trangdong247/s-a-kun` (nếu trước đó bạn đã đổi tên repo trên GitHub sang tên mới, hãy dùng link web theo tên repo mới đó)[cite: 1].
-* **Kiểm tra ô SĐT trong `index.html`:** Nếu trên web vẫn không thấy ô nhập SĐT, hãy mở `index.html` và đảm bảo trong `<form id="voteForm">` có thẻ `<input ... id="voterPhone" ...>`.
-* **Test trên tab ẩn danh:** Đợi 1–2 phút cho GitHub Pages cập nhật xong, mở trang web ở **tab ẩn danh**, nhập **Họ tên** + **1 SĐT 10 số bắt đầu bằng `0` chưa từng dùng**, rồi bấm xác nhận bình chọn.
+  const fullname = fullnameInput.value.trim();
+  const phone = phoneInput.value.trim();
+  const region = regionSelect.value;
+  const message = msgInput.value.trim();
+  const allowPublic = agreeShareCheckbox.checked;
 
-Sau khi dán bản này lên GitHub và thử bình chọn ở tab ẩn danh, tin nhắn có báo về Telegram của bạn chưa?
+  if (!fullname) {
+    statusMsg.style.color = "#dc2626";
+    statusMsg.textContent = "Vui lòng nhập họ và tên của bạn.";
+    fullnameInput.focus();
+    return;
+  }
+
+  if (!/^[0-9]{9,11}$/.test(phone)) {
+    statusMsg.style.color = "#dc2626";
+    statusMsg.textContent = "Số điện thoại cần gồm 9 đến 11 chữ số.";
+    phoneInput.focus();
+    return;
+  }
+
+  if (!message) {
+    statusMsg.style.color = "#dc2626";
+    statusMsg.textContent = "Vui lòng nhập lời nhắn gửi yêu thương.";
+    msgInput.focus();
+    return;
+  }
+
+  submitBtn.disabled = true;
+  statusMsg.style.color = "#0066cc";
+  statusMsg.textContent = "Đang gửi thông tin và tạo thiệp...";
+
+  const payload = { fullname, phone, region, message };
+  lastSubmittedData = payload;
+
+  // Cập nhật số liệu & danh sách lời nhắn gần đây
+  const targetRegion = state.regions.find((r) => r.name === region);
+  if (targetRegion) {
+    targetRegion.count += 1;
+  }
+  state.totalVotes += 1;
+
+  if (allowPublic) {
+    state.recent.unshift({
+      fullname,
+      region,
+      message,
+      time: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + " hôm nay"
+    });
+  }
+
+  saveState();
+  renderRegions();
+  renderRecent();
+
+  try {
+    await Promise.all([sendToTelegram(payload), syncToFirebase(payload)]);
+    statusMsg.style.color = "#16a34a";
+    statusMsg.textContent = "Gửi thành công! Thiệp chứng nhận của bạn đã sẵn sàng.";
+  } catch (err) {
+    console.error("Lỗi gửi dữ liệu:", err);
+    statusMsg.style.color = "#d97706";
+    statusMsg.textContent = "Đã tạo thiệp & cập nhật tiến độ (kiểm tra lại Token Telegram nếu chưa thấy tin nhắn).";
+  }
+
+  copyFeedback.textContent = "";
+  generatePostcard(payload);
+  modal.classList.add("active");
+
+  submitBtn.disabled = false;
+  form.reset();
+  agreeShareCheckbox.checked = true;
+  charNum.textContent = "0";
+});
+
+resetDemoBtn.addEventListener("click", () => {
+  localStorage.removeItem(STORAGE_KEY);
+  state = {
+    regions: structuredClone(DEFAULT_REGIONS),
+    recent: structuredClone(DEFAULT_RECENT),
+    totalVotes: 0
+  };
+  renderRegions();
+  renderRecent();
+  statusMsg.style.color = "#0066cc";
+  statusMsg.textContent = "Đã khôi phục số liệu mặc định trên trình duyệt.";
+});
+
+closeModal.addEventListener("click", () => modal.classList.remove("active"));
+modal.addEventListener("click", (e) => {
+  if (e.target === modal) modal.classList.remove("active");
+});
+
+downloadBtn.addEventListener("click", () => {
+  const link = document.createElement("a");
+  link.download = "Thiep-Sua-KUN-Cho-Ban.png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+});
+
+copyCaptionBtn.addEventListener("click", async () => {
+  const caption = lastSubmittedData
+    ? `Mình vừa gửi lời nhắn & đồng hành cùng Sữa KUN đến trẻ em ${lastSubmittedData.region}: "${lastSubmittedData.message}" #SuaKUNChoBan`
+    : `Cùng KUN gửi trao sữa dinh dưỡng đến trẻ em vùng khó khăn! #SuaKUNChoBan`;
+
+  try {
+    await navigator.clipboard.writeText(caption);
+    copyFeedback.textContent = "Đã sao chép caption + #SuaKUNChoBan!";
+  } catch {
+    copyFeedback.textContent = caption;
+  }
+});
+
+// Khởi tạo lần đầu
+renderRegions();
+renderRecent();
