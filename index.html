@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sữa KUN Cho Bạn - Cùng Em Cao Lớn</title>
+  <title>Sữa KUN Cho Bạn - Cùng Em Cao Lớn | suakunchoem.gt.tc</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -18,7 +18,7 @@
         <div class="brand-badge">KUN</div>
         <div class="brand-text">
           <span class="brand-title">SỮA KUN CHO BẠN</span>
-          <span class="brand-sub">Cùng Em Cao Lớn</span>
+          <span class="brand-sub">suakunchoem.gt.tc • Cùng Em Cao Lớn</span>
         </div>
       </div>
 
@@ -40,7 +40,7 @@
   <section class="hero">
     <div class="container hero-grid">
       <div class="hero-content">
-        <span class="pill-tag">✨ Dự án cộng đồng cùng KUN 100% Sữa Tươi</span>
+        <span class="pill-tag">✨ Dự án cộng đồng cùng KUN 100% Sữa Tươi • suakunchoem.gt.tc</span>
         <h1>Sữa KUN cho bạn</h1>
         <p class="hero-lead">
           Cảm ơn bạn đồng hành cùng KUN trao tặng đến các bé
@@ -62,7 +62,7 @@
 
         <div class="hero-counters">
           <div class="counter-box">
-            <span class="counter-loc">📍 Tuyên Quang & Toàn Quốc</span>
+            <span class="counter-loc">📍 Tuyên Quang &amp; Toàn Quốc</span>
             <strong id="milkCounter">10.000.000</strong>
             <span>Hộp sữa đã được công nhận để trao tặng</span>
           </div>
@@ -81,7 +81,7 @@
             <div class="milk-box">
               <div class="milk-logo">KUN</div>
               <div class="milk-type">100% SỮA TƯƠI</div>
-              <div class="milk-vol">180ml • Dinh dưỡng & Yêu thương</div>
+              <div class="milk-vol">180ml • Dinh dưỡng &amp; Yêu thương</div>
             </div>
             <div class="floating-note note-1">💌 “Chúc các em luôn vui khỏe!”</div>
             <div class="floating-note note-2">🥛 1 Chia sẻ = 1 Hộp sữa trao đi</div>
@@ -153,26 +153,25 @@
     </div>
   </section>
 
-  <!-- 3. TẠO PHIẾU THAM GIA & XÁC NHẬN OTP 60 GIÂY -->
+  <!-- 3. TẠO PHIẾU THAM GIA & XÁC NHẬN MÃ SAU 60 GIÂY -->
   <section id="tao-phieu" class="section section-soft">
     <div class="container">
       <div class="section-head">
         <span class="section-kicker">ĐĂNG KÝ ĐỒNG HÀNH CÙNG KUN</span>
-        <h2>Tạo Phiếu Xác Nhận Đóng Góp & Trao Sữa</h2>
-        <p>Nhập họ tên, số điện thoại để nhận mã xác nhận trong 60 giây và hoàn tất phiếu ghi nhận đồng hành.</p>
+        <h2>Tạo Phiếu Xác Nhận Đóng Góp &amp; Trao Sữa</h2>
+        <p>Nhập họ tên, số điện thoại — sau 60 giây nhập mã xác nhận rồi hoàn tất phiếu trên <strong>suakunchoem.gt.tc</strong>.</p>
       </div>
 
       <div class="ticket-wrapper">
-        <!-- Thanh bước -->
         <div class="stepper">
           <div class="step-item active" id="stepBadge1">
             <span class="step-num">1</span>
-            <span>Nhập thông tin</span>
+            <span>Nhập họ tên &amp; SĐT</span>
           </div>
           <div class="step-line"></div>
           <div class="step-item" id="stepBadge2">
             <span class="step-num">2</span>
-            <span>Xác nhận 60s</span>
+            <span>Chờ 60s &amp; nhập mã</span>
           </div>
           <div class="step-line"></div>
           <div class="step-item" id="stepBadge3">
@@ -202,31 +201,34 @@
               <option value="Miền Trung ruột thịt">Miền Trung ruột thịt</option>
               <option value="Tây Nguyên nắng gió">Tây Nguyên nắng gió</option>
               <option value="MeKong nghĩa tình">MeKong nghĩa tình</option>
-              <option value="Vùng núi cao & Miền Bắc">Vùng núi cao & Miền Bắc</option>
+              <option value="Vùng núi cao &amp; Miền Bắc">Vùng núi cao &amp; Miền Bắc</option>
             </select>
           </div>
 
           <p id="step1Error" class="error-msg"></p>
 
           <button type="submit" class="btn btn-primary btn-lg full-w">
-            Gửi mã xác nhận (60 giây)
+            Tạo phiếu &amp; đếm ngược 60 giây
           </button>
         </form>
 
-        <!-- BƯỚC 2: ĐẾM NGƯỢC 60 GIÂY -->
+        <!-- BƯỚC 2: ĐẾM NGƯỢC 60 GIÂY RỒI NHẬP MÃ XÁC NHẬN -->
         <div id="ticketStep2" class="ticket-panel hidden">
           <div class="otp-info-banner">
-            <p>Mã xác nhận 6 chữ số đã được gửi tới số điện thoại <strong id="displayPhone"></strong>.</p>
+            <p id="otpWaitStatus">Đang đếm ngược 60 giây — sau 60s mã xác nhận sẽ sẵn sàng để bạn nhập.</p>
+            <p>Số điện thoại đăng ký: <strong id="displayPhone"></strong>.</p>
             <div class="demo-sms-box">
-              <span>📩 Tin nhắn mẫu:</span>
-              <strong id="demoOtpCode">------</strong>
-              <button type="button" class="btn-link" onclick="autoFillOtp()">Điền nhanh mã</button>
+              <span>🔑 Mã xác nhận:</span>
+              <strong id="demoOtpCode">Chờ 60s...</strong>
+              <button type="button" id="autoFillBtn" class="btn-link" onclick="autoFillOtp()" disabled>
+                Điền nhanh mã
+              </button>
             </div>
           </div>
 
           <div class="countdown-card">
             <div class="countdown-top">
-              <span>Thời gian hiệu lực của mã xác nhận:</span>
+              <span>Thời gian đếm ngược (60 giây):</span>
               <strong id="countdownText" class="timer-num">60s</strong>
             </div>
             <div class="progress-track">
@@ -243,17 +245,18 @@
               inputmode="numeric"
               maxlength="6"
               placeholder="• • • • • •"
+              disabled
             />
           </div>
 
           <p id="step2Error" class="error-msg"></p>
 
           <div class="otp-actions">
-            <button type="button" id="verifyBtn" class="btn btn-yellow btn-lg" onclick="handleVerifyOtp()">
+            <button type="button" id="verifyBtn" class="btn btn-yellow btn-lg" onclick="handleVerifyOtp()" disabled>
               Hoàn tất phiếu
             </button>
-            <button type="button" id="resendBtn" class="btn btn-outline" onclick="resendOtp()" disabled>
-              Gửi lại mã mới
+            <button type="button" id="resendBtn" class="btn btn-outline" onclick="start60sTicketFlow()" disabled>
+              Gửi lại mã mới (60s)
             </button>
             <button type="button" class="btn btn-ghost" onclick="resetTicketFlow()">
               Sửa thông tin
@@ -265,9 +268,9 @@
         <div id="ticketStep3" class="ticket-panel hidden">
           <div class="receipt-card" id="receiptCard">
             <div class="receipt-header">
-              <span class="receipt-badge">✅ ĐÃ XÁC NHẬN THÀNH CÔNG</span>
+              <span class="receipt-badge">✅ ĐÃ HOÀN TẤT PHIẾU</span>
               <h3>PHIẾU GHI NHẬN ĐỒNG HÀNH CÙNG KUN</h3>
-              <p class="receipt-id">Mã phiếu: <strong id="receiptCode">#KUN-000000</strong></p>
+              <p class="receipt-id">Mã phiếu: <strong id="receiptCode">#KUN-000000</strong> • <span>suakunchoem.gt.tc</span></p>
             </div>
 
             <div class="receipt-body">
@@ -284,12 +287,16 @@
                 <strong id="receiptRegion">—</strong>
               </div>
               <div class="receipt-row">
+                <span>Mã xác nhận đã nhập:</span>
+                <strong id="receiptOtp">—</strong>
+              </div>
+              <div class="receipt-row">
                 <span>Thời gian hoàn tất:</span>
                 <strong id="receiptTime">—</strong>
               </div>
               <div class="receipt-row">
                 <span>Đóng góp ghi nhận:</span>
-                <strong>+01 Hộp sữa KUN 100% Sữa Tươi & Lời Nhắn Gửi</strong>
+                <strong>+01 Hộp sữa KUN 100% Sữa Tươi &amp; Lời Nhắn Gửi</strong>
               </div>
             </div>
 
@@ -450,7 +457,7 @@
           <div class="brand-badge">KUN</div>
           <div class="brand-text">
             <span class="brand-title">SỮA KUN CHO BẠN</span>
-            <span class="brand-sub">Bản quyền thuộc về IDP (LOF)</span>
+            <span class="brand-sub">suakunchoem.gt.tc • Bản quyền thuộc về IDP (LOF)</span>
           </div>
         </div>
         <p class="footer-copy">
