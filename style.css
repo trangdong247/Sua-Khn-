@@ -439,7 +439,7 @@ body {
   color: var(--text-muted);
 }
 
-/* TICKET & OTP 60S */
+/* TICKET & 60S ZALO OTP */
 .ticket-wrapper {
   max-width: 720px;
   margin: 0 auto;
@@ -534,6 +534,11 @@ textarea:focus {
   border-color: var(--blue-main);
 }
 
+input:disabled {
+  background: #f4f7fb;
+  color: var(--text-muted);
+}
+
 .otp-info-banner {
   background: #f0f7ff;
   border: 1px solid #cde2ff;
@@ -547,7 +552,7 @@ textarea:focus {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   background: var(--white);
   padding: 8px 12px;
   border-radius: 10px;
@@ -555,7 +560,7 @@ textarea:focus {
 }
 
 .demo-sms-box strong {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   letter-spacing: 2px;
   color: var(--blue-dark);
 }
