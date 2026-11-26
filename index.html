@@ -152,13 +152,13 @@
     </div>
   </section>
 
-  <!-- 3. TẠO PHIẾU & XÁC NHẬN MÃ 6 SỐ DO CHỦ WEB GỬI ZALO -->
+  <!-- 3. TẠO PHIẾU & XÁC NHẬN MÃ SAU 60 GIÂY -->
   <section id="tao-phieu" class="section section-soft">
     <div class="container">
       <div class="section-head">
         <span class="section-kicker">ĐĂNG KÝ ĐỒNG HÀNH CÙNG KUN</span>
-        <h2>Tạo Phiếu &amp; Xác Nhận Mã Zalo (60 Giây)</h2>
-        <p>Nhập họ tên và số điện thoại — chủ web sẽ gửi mã 6 số vào Zalo của bạn; nhập mã để hoàn tất phiếu.</p>
+        <h2>Tạo Phiếu &amp; Xác Nhận Mã (60 Giây)</h2>
+        <p>Nhập họ và tên, số điện thoại — sau 60 giây nhập mã xác nhận rồi hoàn tất phiếu.</p>
       </div>
 
       <div class="ticket-wrapper">
@@ -170,7 +170,7 @@
           <div class="step-line"></div>
           <div class="step-item" id="stepBadge2">
             <span class="step-num">2</span>
-            <span>Chờ mã Zalo &amp; xác nhận</span>
+            <span>Chờ 60s &amp; nhập mã</span>
           </div>
           <div class="step-line"></div>
           <div class="step-item" id="stepBadge3">
@@ -179,7 +179,7 @@
           </div>
         </div>
 
-        <!-- BƯỚC 1: NHẬP HỌ TÊN & SĐT -->
+        <!-- BƯỚC 1 -->
         <form id="ticketStep1" class="ticket-panel" onsubmit="handleSendOtp(event)">
           <div class="form-row">
             <div class="form-group">
@@ -188,7 +188,7 @@
             </div>
 
             <div class="form-group">
-              <label for="phoneNumber">Số điện thoại / Zalo <span class="req">*</span></label>
+              <label for="phoneNumber">Số điện thoại <span class="req">*</span></label>
               <input type="tel" id="phoneNumber" placeholder="Ví dụ: 0912345678" maxlength="11" required />
             </div>
           </div>
@@ -207,22 +207,27 @@
           <p id="step1Error" class="error-msg"></p>
 
           <button type="submit" class="btn btn-primary btn-lg full-w">
-            Gửi yêu cầu &amp; đếm ngược 60 giây nhận mã Zalo
+            Tạo phiếu &amp; đếm ngược 60 giây
           </button>
         </form>
 
-        <!-- BƯỚC 2: ĐẾM NGƯỢC 60S & NHẬP MÃ 6 SỐ DO CHỦ WEB GỬI ZALO -->
+        <!-- BƯỚC 2 -->
         <div id="ticketStep2" class="ticket-panel hidden">
           <div class="otp-info-banner">
-            <p id="otpWaitStatus">
-              Đang chờ chủ web gửi mã 6 số vào Zalo (đếm ngược 60s). Khi nhận được mã trên Zalo, hãy nhập vào ô bên dưới.
-            </p>
-            <p>Số điện thoại / Zalo nhận mã: <strong id="displayPhone"></strong>.</p>
+            <p id="otpWaitStatus">Đang đếm ngược 60 giây — sau 60s mã xác nhận sẽ sẵn sàng để bạn nhập.</p>
+            <p>Số điện thoại đăng ký: <strong id="displayPhone"></strong>.</p>
+            <div class="demo-sms-box">
+              <span>🔑 Mã xác nhận:</span>
+              <strong id="demoOtpCode">Chờ 60s...</strong>
+              <button type="button" id="autoFillBtn" class="btn-link" onclick="autoFillOtp()" disabled>
+                Điền nhanh mã
+              </button>
+            </div>
           </div>
 
           <div class="countdown-card">
             <div class="countdown-top">
-              <span>Thời gian chờ nhận mã từ Zalo:</span>
+              <span>Đếm ngược 60 giây:</span>
               <strong id="countdownText" class="timer-num">60s</strong>
             </div>
             <div class="progress-track">
@@ -231,7 +236,7 @@
           </div>
 
           <div class="form-group">
-            <label for="otpInput">Nhập mã 6 số chủ web gửi qua Zalo <span class="req">*</span></label>
+            <label for="otpInput">Nhập mã xác nhận (6 chữ số) <span class="req">*</span></label>
             <input
               type="text"
               id="otpInput"
@@ -239,17 +244,18 @@
               inputmode="numeric"
               maxlength="6"
               placeholder="• • • • • •"
+              disabled
             />
           </div>
 
           <p id="step2Error" class="error-msg"></p>
 
           <div class="otp-actions">
-            <button type="button" id="verifyBtn" class="btn btn-yellow btn-lg" onclick="handleVerifyOtp()">
+            <button type="button" id="verifyBtn" class="btn btn-yellow btn-lg" onclick="handleVerifyOtp()" disabled>
               Hoàn tất phiếu
             </button>
-            <button type="button" id="resendBtn" class="btn btn-outline" onclick="requestResendFromOwner()" disabled>
-              Yêu cầu gửi lại mã
+            <button type="button" id="resendBtn" class="btn btn-outline" onclick="start60sTicketFlow()" disabled>
+              Gửi lại mã mới (60s)
             </button>
             <button type="button" class="btn btn-ghost" onclick="resetTicketFlow()">
               Sửa thông tin
@@ -257,11 +263,11 @@
           </div>
         </div>
 
-        <!-- BƯỚC 3: HOÀN TẤT PHIẾU -->
+        <!-- BƯỚC 3 -->
         <div id="ticketStep3" class="ticket-panel hidden">
           <div class="receipt-card" id="receiptCard">
             <div class="receipt-header">
-              <span class="receipt-badge">✅ ĐÃ XÁC NHẬN THÀNH CÔNG</span>
+              <span class="receipt-badge">✅ ĐÃ HOÀN TẤT PHIẾU</span>
               <h3>PHIẾU GHI NHẬN ĐỒNG HÀNH CÙNG KUN</h3>
               <p class="receipt-id">Mã phiếu: <strong id="receiptCode">#KUN-000000</strong></p>
             </div>
@@ -272,7 +278,7 @@
                 <strong id="receiptName">—</strong>
               </div>
               <div class="receipt-row">
-                <span>Số điện thoại / Zalo:</span>
+                <span>Số điện thoại xác thực:</span>
                 <strong id="receiptPhone">—</strong>
               </div>
               <div class="receipt-row">
@@ -280,7 +286,7 @@
                 <strong id="receiptRegion">—</strong>
               </div>
               <div class="receipt-row">
-                <span>Mã 6 số đã xác nhận:</span>
+                <span>Mã xác nhận đã nhập:</span>
                 <strong id="receiptOtp">—</strong>
               </div>
               <div class="receipt-row">
