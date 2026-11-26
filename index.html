@@ -3,132 +3,537 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sữa KUN Cho Bạn - Cùng KUN Mang Sữa Đến Trẻ Em Vùng Khó Khăn</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <title>Sữa KUN Cho Bạn - Cùng Em Cao Lớn</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Header -->
-  <header class="hero">
-    <div class="container">
-      <div class="brand-badge">LOF • SỮA KUN CHO BẠN • #SuaKUNChoBan</div>
-      <h1>CÙNG KUN GỬI TRAO YÊU THƯƠNG</h1>
-      <p class="subtitle">
-        Mỗi lời nhắn gửi sẻ chia của bạn sẽ tiếp thêm nguồn dinh dưỡng và niềm vui đến trẻ em vùng sâu, vùng xa & biển đảo.
-      </p>
-      <div class="hero-stats">
-        <div class="stat-pill">
-          <span>Tổng hộp sữa đã đóng góp:</span>
-          <strong id="total-milk">128.450</strong> <span>hộp</span>
-        </div>
-        <div class="stat-pill">
-          <span>Lượt sẻ chia:</span>
-          <strong id="total-votes">0</strong> <span>lượt</span>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <div class="brand-badge">KUN</div>
+        <div class="brand-text">
+          <span class="brand-title">SỮA KUN CHO BẠN</span>
+          <span class="brand-sub">Cùng Em Cao Lớn</span>
         </div>
       </div>
+
+      <nav class="nav-links">
+        <a href="#vung-mien">Vùng miền</a>
+        <a href="#tao-phieu">Tạo phiếu 60s</a>
+        <a href="#san-choi">Sân chơi KUN</a>
+        <a href="#giai-doan-2">Giai đoạn 2</a>
+        <a href="#thu-vien">Hình ảnh</a>
+      </nav>
+
+      <button class="btn btn-yellow btn-sm" onclick="openPostcardModal('Biển Đảo')">
+        Trao Lời Nhắn Gửi
+      </button>
     </div>
   </header>
 
-  <main class="container main-grid">
-    <!-- Cột trái: Tiến độ & Bảng xếp hạng vùng miền + Lời nhắn gần đây -->
-    <div class="left-column">
-      <section class="card progress-section">
-        <div class="section-header">
-          <h2>Hành Trình Sữa KUN Đến Các Vùng Miền</h2>
-          <button type="button" id="reset-demo-btn" class="btn-reset" title="Khôi phục số liệu gốc trên trình duyệt">
-            Khôi phục mặc định
+  <!-- 1. HERO SECTION -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <span class="pill-tag">✨ Dự án cộng đồng cùng KUN 100% Sữa Tươi</span>
+        <h1>Sữa KUN cho bạn</h1>
+        <p class="hero-lead">
+          Cảm ơn bạn đồng hành cùng KUN trao tặng đến các bé
+          <strong class="highlight-num">500.000</strong> hộp sữa
+          <strong>KUN 100% Sữa Tươi</strong>.
+        </p>
+        <p class="hero-desc">
+          Với mỗi lượt chia sẻ kèm Hashtag* <span class="hashtag-badge">#SuaKUNChoBan</span>, bạn đã đồng thời
+          trao đi những hộp sữa KUN thơm ngon, dinh dưỡng cùng những
+          <strong>“LỜI NHẮN GỬI”</strong>, thay cái ôm sẻ chia với những em bé khó khăn.
+        </p>
+
+        <div class="hero-actions">
+          <a href="#tao-phieu" class="btn btn-yellow btn-lg">Tạo phiếu tham gia ngay</a>
+          <button class="btn btn-white btn-lg" onclick="openPostcardModal('Miền Trung')">
+            Tạo Postcard Yêu Thương
           </button>
         </div>
-        <p class="desc">Tự động xếp hạng theo tỷ lệ hoàn thành mục tiêu từng khu vực:</p>
 
-        <!-- Danh sách thanh tiến độ + thứ hạng render bằng JS -->
-        <div class="region-list" id="region-list"></div>
-
-        <div class="note-box">
-          💡 <b>Cách thức tham gia:</b> Điền họ tên, số điện thoại, chọn vùng miền và viết lời nhắn. Hệ thống gửi thông báo về Telegram, cập nhật tiến độ và tạo <b>Thiệp Chứng Nhận PNG</b> kèm hashtag <b>#SuaKUNChoBan</b>.
+        <div class="hero-counters">
+          <div class="counter-box">
+            <span class="counter-loc">📍 Tuyên Quang & Toàn Quốc</span>
+            <strong id="milkCounter">10.000.000</strong>
+            <span>Hộp sữa đã được công nhận để trao tặng</span>
+          </div>
+          <div class="counter-box">
+            <span class="counter-loc">💛 Hành trình lan tỏa</span>
+            <strong id="kidCounter">5.000.000</strong>
+            <span>Em bé đã được trao tặng</span>
+          </div>
         </div>
-      </section>
-
-      <section class="card recent-section">
-        <h2>Những Lời Nhắn Sẻ Chia Gần Đây</h2>
-        <p class="desc">Cập nhật tức thì những đóng góp mới nhất:</p>
-        <ul class="recent-list" id="recent-list"></ul>
-      </section>
-    </div>
-
-    <!-- Cột phải: Form bình chọn & gửi lời nhắn -->
-    <section class="card form-section">
-      <h2>Gửi Lời Nhắn & Bình Chọn Vùng Miền</h2>
-      <p class="desc">Mỗi lượt gửi tương ứng 1 lời nhắn sẻ chia cùng cộng đồng KUN.</p>
-
-      <form id="kun-form" novalidate>
-        <div class="form-group">
-          <label for="fullname">Họ và tên của bạn *</label>
-          <input type="text" id="fullname" name="fullname" placeholder="Ví dụ: Nguyễn Văn A" required />
-        </div>
-
-        <div class="form-group">
-          <label for="phone">Số điện thoại *</label>
-          <input type="tel" id="phone" name="phone" placeholder="Ví dụ: 0912345678" inputmode="numeric" required />
-        </div>
-
-        <div class="form-group">
-          <label for="region">Chọn vùng miền nhận sữa *</label>
-          <select id="region" name="region" required>
-            <option value="Biển Đảo">🏝️ Biển Đảo & Hải Đảo</option>
-            <option value="Tây Bắc">⛰️ Vùng Cao Tây Bắc</option>
-            <option value="Tây Nguyên">🌲 Đại Ngàn Tây Nguyên</option>
-            <option value="Miền Trung">🌊 Miền Trung Khó Khăn</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="message">Lời nhắn gửi yêu thương *</label>
-          <textarea
-            id="message"
-            name="message"
-            rows="3"
-            maxlength="140"
-            placeholder="Chúc các bạn nhỏ luôn khỏe mạnh, chăm ngoan và học thật giỏi nhé!"
-            required
-          ></textarea>
-          <small class="char-count"><span id="char-num">0</span>/140 ký tự</small>
-        </div>
-
-        <div class="form-group checkbox-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="agree-share" checked />
-            <span>Hiển thị tên & lời nhắn của tôi ở mục "Lời nhắn sẻ chia gần đây"</span>
-          </label>
-        </div>
-
-        <button type="submit" class="btn-submit" id="submit-btn">
-          GỬI LỜI NHẮN & NHẬN THIỆP KUN
-        </button>
-        <p id="status-msg" class="status-msg" aria-live="polite"></p>
-      </form>
-    </section>
-  </main>
-
-  <!-- Modal hiển thị Thiệp PNG -->
-  <div class="modal" id="postcard-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal-content">
-      <button type="button" class="close-btn" id="close-modal" aria-label="Đóng">&times;</button>
-      <h3 id="modal-title">🎉 Cảm Ơn Bạn Đã Đồng Hành Cùng KUN!</h3>
-      <p>Tải thiệp PNG bên dưới và chia sẻ lên mạng xã hội kèm hashtag <b>#SuaKUNChoBan</b></p>
-      <canvas id="postcard-canvas" width="900" height="560"></canvas>
-      <div class="modal-actions">
-        <button type="button" id="download-btn" class="btn-download">⬇️ Tải Thiệp PNG Về Máy</button>
-        <button type="button" id="copy-caption-btn" class="btn-secondary">📋 Sao Chép Caption + Hashtag</button>
       </div>
-      <p id="copy-feedback" class="copy-feedback"></p>
+
+      <div class="hero-visual">
+        <div class="visual-card">
+          <div class="milk-pack-art">
+            <div class="sun-burst"></div>
+            <div class="milk-box">
+              <div class="milk-logo">KUN</div>
+              <div class="milk-type">100% SỮA TƯƠI</div>
+              <div class="milk-vol">180ml • Dinh dưỡng & Yêu thương</div>
+            </div>
+            <div class="floating-note note-1">💌 “Chúc các em luôn vui khỏe!”</div>
+            <div class="floating-note note-2">🥛 1 Chia sẻ = 1 Hộp sữa trao đi</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. VÙNG MIỀN TRAO LỜI NHẮN GỬI -->
+  <section id="vung-mien" class="section">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-kicker">LAN TỎA YÊU THƯƠNG KHẮP MỌI MIỀN</span>
+        <h2>Hãy chọn vùng miền mà bạn muốn trao “Lời nhắn gửi” đến các em</h2>
+        <p>
+          Đặc biệt, bạn có thể đồng hành trong từng bước chân trưởng thành của con, dạy con những bài học
+          đầu tiên - biết yêu thương và chia sẻ, như việc gửi những lời nhắn nhủ yêu thương đến những người bạn
+          ở vùng miền khác.
+        </p>
+      </div>
+
+      <div class="region-grid">
+        <article class="region-card region-island">
+          <div class="region-icon">🏝️</div>
+          <h3>Biển Đảo</h3>
+          <p class="region-sub">xa xôi</p>
+          <p class="region-note">Gửi hơi ấm đất liền tới các em nhỏ nơi đầu sóng ngọn gió.</p>
+          <button class="btn btn-primary full-w" onclick="openPostcardModal('Biển Đảo')">
+            Trao "Lời Nhắn Gửi" Yêu Thương
+          </button>
+        </article>
+
+        <article class="region-card region-central">
+          <div class="region-icon">⛰️</div>
+          <h3>Miền Trung</h3>
+          <p class="region-sub">ruột thịt</p>
+          <p class="region-note">Tiếp thêm nguồn dinh dưỡng mỗi ngày cho thiếu nhi dải đất miền Trung.</p>
+          <button class="btn btn-primary full-w" onclick="openPostcardModal('Miền Trung')">
+            Trao "Lời Nhắn Gửi" Yêu Thương
+          </button>
+        </article>
+
+        <article class="region-card region-highland">
+          <div class="region-icon">🌲</div>
+          <h3>Tây Nguyên</h3>
+          <p class="region-sub">nắng gió</p>
+          <p class="region-note">Đồng hành cùng ước mơ đến trường của các em nhỏ buôn làng đại ngàn.</p>
+          <button class="btn btn-primary full-w" onclick="openPostcardModal('Tây Nguyên')">
+            Trao "Lời Nhắn Gửi" Yêu Thương
+          </button>
+        </article>
+
+        <article class="region-card region-mekong">
+          <div class="region-icon">🚤</div>
+          <h3>MeKong</h3>
+          <p class="region-sub">nghĩa tình</p>
+          <p class="region-note">Sẻ chia yêu thương cùng các bạn nhỏ miền sông nước Cửu Long.</p>
+          <button class="btn btn-primary full-w" onclick="openPostcardModal('MeKong')">
+            Trao "Lời Nhắn Gửi" Yêu Thương
+          </button>
+        </article>
+      </div>
+
+      <div class="disclaimer-box">
+        <p>* 8 bạn trẻ/cặp mẹ con may mắn khi tham gia trao “Lời Nhắn Gửi” sẽ được KUN tài trợ tham gia chuyến đi trao sữa và các hoạt động vui chơi cùng các em nhỏ.</p>
+        <p>* Lượt chia sẻ được tính khi người tham gia thực hiện chia sẻ thông tin dự án lên Facebook kèm hashtag <strong>#SuaKUNChoBan</strong> hoặc đăng lại (repost) lên Tiktok.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. TẠO PHIẾU THAM GIA & XÁC NHẬN OTP 60 GIÂY -->
+  <section id="tao-phieu" class="section section-soft">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-kicker">ĐĂNG KÝ ĐỒNG HÀNH CÙNG KUN</span>
+        <h2>Tạo Phiếu Xác Nhận Đóng Góp & Trao Sữa</h2>
+        <p>Nhập họ tên, số điện thoại để nhận mã xác nhận trong 60 giây và hoàn tất phiếu ghi nhận đồng hành.</p>
+      </div>
+
+      <div class="ticket-wrapper">
+        <!-- Thanh bước -->
+        <div class="stepper">
+          <div class="step-item active" id="stepBadge1">
+            <span class="step-num">1</span>
+            <span>Nhập thông tin</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step-item" id="stepBadge2">
+            <span class="step-num">2</span>
+            <span>Xác nhận 60s</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step-item" id="stepBadge3">
+            <span class="step-num">3</span>
+            <span>Hoàn tất phiếu</span>
+          </div>
+        </div>
+
+        <!-- BƯỚC 1 -->
+        <form id="ticketStep1" class="ticket-panel" onsubmit="handleSendOtp(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fullName">Họ và tên <span class="req">*</span></label>
+              <input type="text" id="fullName" placeholder="Ví dụ: Nguyễn Văn An" required />
+            </div>
+
+            <div class="form-group">
+              <label for="phoneNumber">Số điện thoại <span class="req">*</span></label>
+              <input type="tel" id="phoneNumber" placeholder="Ví dụ: 0912345678" maxlength="11" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="ticketRegion">Vùng miền đăng ký đồng hành</label>
+            <select id="ticketRegion">
+              <option value="Biển Đảo xa xôi">Biển Đảo xa xôi</option>
+              <option value="Miền Trung ruột thịt">Miền Trung ruột thịt</option>
+              <option value="Tây Nguyên nắng gió">Tây Nguyên nắng gió</option>
+              <option value="MeKong nghĩa tình">MeKong nghĩa tình</option>
+              <option value="Vùng núi cao & Miền Bắc">Vùng núi cao & Miền Bắc</option>
+            </select>
+          </div>
+
+          <p id="step1Error" class="error-msg"></p>
+
+          <button type="submit" class="btn btn-primary btn-lg full-w">
+            Gửi mã xác nhận (60 giây)
+          </button>
+        </form>
+
+        <!-- BƯỚC 2: ĐẾM NGƯỢC 60 GIÂY -->
+        <div id="ticketStep2" class="ticket-panel hidden">
+          <div class="otp-info-banner">
+            <p>Mã xác nhận 6 chữ số đã được gửi tới số điện thoại <strong id="displayPhone"></strong>.</p>
+            <div class="demo-sms-box">
+              <span>📩 Tin nhắn mẫu:</span>
+              <strong id="demoOtpCode">------</strong>
+              <button type="button" class="btn-link" onclick="autoFillOtp()">Điền nhanh mã</button>
+            </div>
+          </div>
+
+          <div class="countdown-card">
+            <div class="countdown-top">
+              <span>Thời gian hiệu lực của mã xác nhận:</span>
+              <strong id="countdownText" class="timer-num">60s</strong>
+            </div>
+            <div class="progress-track">
+              <div id="countdownBar" class="progress-fill"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="otpInput">Nhập mã xác nhận (6 chữ số) <span class="req">*</span></label>
+            <input
+              type="text"
+              id="otpInput"
+              class="otp-input"
+              inputmode="numeric"
+              maxlength="6"
+              placeholder="• • • • • •"
+            />
+          </div>
+
+          <p id="step2Error" class="error-msg"></p>
+
+          <div class="otp-actions">
+            <button type="button" id="verifyBtn" class="btn btn-yellow btn-lg" onclick="handleVerifyOtp()">
+              Hoàn tất phiếu
+            </button>
+            <button type="button" id="resendBtn" class="btn btn-outline" onclick="resendOtp()" disabled>
+              Gửi lại mã mới
+            </button>
+            <button type="button" class="btn btn-ghost" onclick="resetTicketFlow()">
+              Sửa thông tin
+            </button>
+          </div>
+        </div>
+
+        <!-- BƯỚC 3: HOÀN TẤT PHIẾU -->
+        <div id="ticketStep3" class="ticket-panel hidden">
+          <div class="receipt-card" id="receiptCard">
+            <div class="receipt-header">
+              <span class="receipt-badge">✅ ĐÃ XÁC NHẬN THÀNH CÔNG</span>
+              <h3>PHIẾU GHI NHẬN ĐỒNG HÀNH CÙNG KUN</h3>
+              <p class="receipt-id">Mã phiếu: <strong id="receiptCode">#KUN-000000</strong></p>
+            </div>
+
+            <div class="receipt-body">
+              <div class="receipt-row">
+                <span>Họ và tên người tham gia:</span>
+                <strong id="receiptName">—</strong>
+              </div>
+              <div class="receipt-row">
+                <span>Số điện thoại xác thực:</span>
+                <strong id="receiptPhone">—</strong>
+              </div>
+              <div class="receipt-row">
+                <span>Vùng miền nhận yêu thương:</span>
+                <strong id="receiptRegion">—</strong>
+              </div>
+              <div class="receipt-row">
+                <span>Thời gian hoàn tất:</span>
+                <strong id="receiptTime">—</strong>
+              </div>
+              <div class="receipt-row">
+                <span>Đóng góp ghi nhận:</span>
+                <strong>+01 Hộp sữa KUN 100% Sữa Tươi & Lời Nhắn Gửi</strong>
+              </div>
+            </div>
+
+            <div class="receipt-footer">
+              Cảm ơn bạn đã cùng KUN &amp; chương trình “Thắp sáng ước mơ Thiếu Nhi Việt Nam” trao gửi yêu thương!
+            </div>
+          </div>
+
+          <div class="receipt-actions">
+            <button type="button" class="btn btn-primary" onclick="downloadReceiptPng()">
+              Tải ảnh phiếu (.PNG)
+            </button>
+            <button type="button" class="btn btn-yellow" onclick="openPostcardFromReceipt()">
+              Tiếp tục tạo Postcard Yêu Thương
+            </button>
+            <button type="button" class="btn btn-outline" onclick="resetTicketFlow()">
+              Tạo phiếu mới
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. MUA HÀNG TRÊN SÀN TMĐT -->
+  <section class="section">
+    <div class="container">
+      <div class="ecom-banner">
+        <div class="ecom-text">
+          <span class="pill-tag">🛒 CHUNG TAY TRÊN CÁC SÀN TMĐT</span>
+          <h2>Và bạn cũng có thể...</h2>
+          <p>
+            Mua <strong>01 thùng KUN 100% Sữa Tươi</strong> trên Shopee / Lazada / Tiktok Shop đồng nghĩa với
+            việc bạn đã cùng KUN đóng góp <strong>1 thùng KUN 100% Sữa Tươi</strong> cho các em bé ở vùng miền
+            xa xôi khó khăn của tổ quốc.
+          </p>
+          <div class="ecom-buttons">
+            <a href="https://shopee.vn" target="_blank" rel="noopener" class="btn btn-shopee">Mua ngay tại Shopee</a>
+            <a href="https://www.lazada.vn" target="_blank" rel="noopener" class="btn btn-lazada">Mua hàng tại Lazada</a>
+            <a href="https://www.tiktok.com" target="_blank" rel="noopener" class="btn btn-tiktok">Mua tại TikTok Shop</a>
+          </div>
+        </div>
+        <div class="ecom-visual">
+          <div class="carton-badge">
+            <span class="carton-big">1 = 1</span>
+            <span>Mua 01 thùng KUN<br />Góp 01 thùng cho em</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. SÂN CHƠI KUN -->
+  <section id="san-choi" class="section section-soft">
+    <div class="container split-grid">
+      <div class="split-visual">
+        <div class="playground-card">
+          <div class="pg-badge">🎪 KHÔNG GIAN VẬN ĐỘNG &amp; SẺ CHIA</div>
+          <h3>Sân Chơi KUN Cho Em</h3>
+          <ul class="pg-list">
+            <li>⚽ Khu vận động thể chất an toàn, nhiều màu sắc</li>
+            <li>💌 Bảng trang trí hàng ngàn “Lời Nhắn Gửi” từ cộng đồng</li>
+            <li>🌱 Nuôi dưỡng niềm vui, sự tự tin và tinh thần đồng đội</li>
+          </ul>
+        </div>
+      </div>
+      <div class="split-content">
+        <span class="section-kicker">HƠN CẢ NHỮNG HỘP SỮA DINH DƯỠNG</span>
+        <h2>KUN KHÔNG CHỈ TRAO SỮA MÀ CÒN TRAO CẢ NIỀM VUI</h2>
+        <p>
+          Ngoài những hộp sữa đầy yêu thương, KUN còn xây dựng thêm các <strong>sân chơi KUN</strong> tại nhiều
+          địa điểm để các em nhỏ có thêm không gian vui chơi, vận động và phát triển toàn diện.
+        </p>
+        <p>
+          Những <strong>"Lời Nhắn Gửi"</strong> chứa chan tình cảm của mọi người khi tham gia dự án sẽ được
+          trang trí tại các sân chơi này, lan tỏa yêu thương và tiếp thêm niềm vui cho các em mỗi ngày.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. SỮA KUN CHO BẠN GIAI ĐOẠN 2 -->
+  <section id="giai-doan-2" class="section">
+    <div class="container">
+      <div class="phase2-card">
+        <span class="pill-tag">🚀 HÀNH TRÌNH MỞ RỘNG TOÀN QUỐC</span>
+        <h2>SỮA KUN CHO BẠN GIAI ĐOẠN 2</h2>
+        <p>
+          Từ vùng núi cao đến nơi biển đảo xa xôi, từ miền Bắc thương yêu đến miền Trung ruột thịt, Mekong nghĩa
+          tình và Tây Nguyên nắng gió. Giai đoạn 2 của dự án <strong>“Sữa KUN Cho Bạn - Cùng Em Cao Lớn”</strong>
+          sẽ mở rộng đến nhiều vùng miền và tỉnh thành hơn, mang dòng sữa dinh dưỡng KUN 100% Sữa Tươi đến với các
+          em bé ở khắp mọi miền Tổ Quốc.
+        </p>
+        <p>
+          Đặc biệt, trong chuyến hành trình lần này, KUN cam kết gửi tặng số lượng hộp sữa KUN 100% Sữa Tươi
+          tương đương với số lượng hashtag được hệ thống kiểm đo Social Listening đếm được cùng số lượng thùng
+          sữa được bán ra trên các sàn TMĐT, đạt mức <strong>1 TRIỆU hộp sữa</strong>. Và bạn sẽ không chỉ đơn
+          thuần trao gửi những hộp sữa yêu thương mà còn có thể đồng hành cùng KUN trao đi những “Lời Nhắn Gửi”
+          đến những em nhỏ khó khăn như một cái ôm sẻ chia ấm áp. Ngoài ra, KUN còn cam kết trao tặng thêm các
+          công trình sân chơi tại một số địa điểm để khích lệ các em, mong các em luôn vui tươi, khỏe mạnh tung
+          tăng mỗi ngày.
+        </p>
+        <div class="partner-box">
+          🤝 Dự án <strong>“Sữa KUN Cho Bạn - Cùng Em Cao Lớn”</strong> đồng hành cùng chương trình
+          <strong>“Thắp sáng ước mơ Thiếu Nhi Việt Nam”</strong> do <strong>Hội Đồng Đội Trung Ương</strong> tổ chức.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. THƯ VIỆN HÌNH ẢNH DỰ ÁN -->
+  <section id="thu-vien" class="section section-soft">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-kicker">KHOẢNH KHẮC YÊU THƯƠNG</span>
+        <h2>Hình ảnh dự án “Sữa KUN cho bạn”</h2>
+      </div>
+
+      <div class="gallery-grid">
+        <div class="gallery-item g-1">
+          <span class="g-emoji">🥛😊</span>
+          <h4>Trao sữa tận tay các em nhỏ</h4>
+          <p>Những thùng sữa KUN 100% Sữa Tươi đến với điểm trường vùng cao &amp; hải đảo.</p>
+        </div>
+        <div class="gallery-item g-2">
+          <span class="g-emoji">🎨🛝</span>
+          <h4>Khánh thành Sân chơi KUN</h4>
+          <p>Không gian vận động rực rỡ sắc màu gắn đầy những lời nhắn yêu thương.</p>
+        </div>
+        <div class="gallery-item g-3">
+          <span class="g-emoji">👨‍👩‍👧‍👦💌</span>
+          <h4>Ba mẹ cùng con viết Postcard</h4>
+          <p>Gieo mầm lòng nhân ái và tinh thần sẻ chia từ những bài học đầu đời.</p>
+        </div>
+      </div>
+
+      <p class="legal-note">
+        * Toàn bộ hình ảnh của các em bé được sử dụng trong dự án đã được nhãn hàng KUN xin phép sử dụng với ba mẹ và người giám hộ của các em.
+      </p>
+    </div>
+  </section>
+
+  <!-- 8. KÊU GỌI CUỐI TRANG & FOOTER -->
+  <section class="cta-bottom">
+    <div class="container cta-inner">
+      <h2>Cảm ơn bạn đã đồng hành cùng KUN</h2>
+      <p>Trao yêu thương đến các em bé khắp mọi miền Tổ Quốc ngay hôm nay!</p>
+      <button class="btn btn-yellow btn-lg" onclick="openPostcardModal('Biển Đảo')">
+        Trao Lời Nhắn Gửi Yêu Thương
+      </button>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <div class="brand footer-brand">
+          <div class="brand-badge">KUN</div>
+          <div class="brand-text">
+            <span class="brand-title">SỮA KUN CHO BẠN</span>
+            <span class="brand-sub">Bản quyền thuộc về IDP (LOF)</span>
+          </div>
+        </div>
+        <p class="footer-copy">
+          Đồng hành cùng chương trình “Thắp sáng ước mơ Thiếu Nhi Việt Nam” – Hội Đồng Đội Trung Ương.
+        </p>
+      </div>
+
+      <div>
+        <h4>Văn phòng Hà Nội</h4>
+        <p>Phòng 705, Tầng 7, tòa nhà IDMC (Ford Thăng Long)</p>
+        <p>Số 105 Láng Hạ, Phường Láng Hạ, Quận Đống Đa, TP Hà Nội</p>
+      </div>
+
+      <div>
+        <h4>Văn phòng Hồ Chí Minh</h4>
+        <p>217 Nguyễn Văn Thủ, Phường Đakao, Quận 1, TP. Hồ Chí Minh</p>
+        <p>Điện thoại: <strong>(84 28) 3823 8638</strong></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MODAL TẠO POSTCARD -->
+  <div id="postcardModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closePostcardModal()" aria-label="Đóng">✕</button>
+      <h3>Tạo Postcard “Lời Nhắn Gửi” Yêu Thương</h3>
+      <p class="modal-sub">Vùng miền đang chọn: <strong id="modalRegionLabel">Biển Đảo</strong></p>
+
+      <div class="modal-grid">
+        <div class="modal-form">
+          <div class="form-group">
+            <label for="senderName">Tên của bạn <span class="char-count" id="senderCount">0/13</span></label>
+            <input type="text" id="senderName" maxlength="13" placeholder="Nhập tên của bạn" oninput="updatePostcardPreview()" />
+          </div>
+
+          <div class="form-group">
+            <label>Giới tính</label>
+            <div class="radio-row">
+              <label class="radio-pill">
+                <input type="radio" name="gender" value="Nữ" checked onchange="updatePostcardPreview()" />
+                <span>Nữ</span>
+              </label>
+              <label class="radio-pill">
+                <input type="radio" name="gender" value="Nam" onchange="updatePostcardPreview()" />
+                <span>Nam</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="kidName">
+              Tên của bé <em>(Nếu bạn có con cùng làm postcard - Không bắt buộc)</em>
+              <span class="char-count" id="kidCount">0/13</span>
+            </label>
+            <input type="text" id="kidName" maxlength="13" placeholder="Nhập tên của bé" oninput="updatePostcardPreview()" />
+          </div>
+
+          <div class="form-group">
+            <div class="label-between">
+              <label for="wishText">Lời nhắn gửi</label>
+              <button type="button" class="btn-link" onclick="cycleWishSuggestion()">✨ Gợi ý lời nhắn</button>
+            </div>
+            <textarea id="wishText" rows="3" maxlength="110" placeholder="Viết lời chúc yêu thương gửi tới các em..." oninput="updatePostcardPreview()"></textarea>
+            <div class="char-right"><span id="wishCount">0/110</span></div>
+          </div>
+
+          <p class="modal-tip">
+            Bạn đừng quên chia sẻ Lời Nhắn Gửi cho các em bé! Nhớ đăng tải lên Facebook hoặc Tiktok kèm hashtag
+            <strong>#SuaKUNChoBan</strong> / <strong>#suakunchoem</strong> để tham gia nhé!
+          </p>
+
+          <button type="button" class="btn btn-yellow btn-lg full-w" onclick="downloadPostcard()">
+            Lưu Postcard (.PNG)
+          </button>
+        </div>
+
+        <div class="modal-preview">
+          <canvas id="postcardCanvas" width="540" height="680"></canvas>
+          <span class="preview-hint">Nhấn giữ hình hoặc bấm “Lưu Postcard” để tải ảnh về máy</span>
+        </div>
+      </div>
     </div>
   </div>
-
-  <footer class="footer">
-    <p>© 2026 Công ty Cổ phần Sữa Quốc tế LOF (IDP) • Chiến dịch cộng đồng #SuaKUNChoBan</p>
-  </footer>
 
   <script src="script.js"></script>
 </body>
