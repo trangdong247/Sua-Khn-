@@ -1,54 +1,18 @@
-// ===== CẤU HÌNH TELEGRAM BOT API =====
-const TELEGRAM_CONFIG = {
-  BOT_TOKEN: "9077621464:AAGSBAFQZN3iIbCxkFvRnU6mQYs3OkMMqHU",
-  CHAT_ID: "6713370589",
+// ===== CẤU HÌNH GỬI MÃ VỀ ZALO SAU 60 GIÂY =====
+const ZALO_60S_CONFIG = {
+  // Điền URL webhook/API trung gian nếu có hệ thống gửi tin nhắn Zalo OA/ZNS
+  WEBHOOK_URL: "",
+  // Tự động mở liên kết Zalo chứa mã xác nhận khi đếm ngược 60 giây kết thúc
+  AUTO_OPEN_ZALO_AT_60S: true,
   ENABLED: true
 };
 
-async function sendToTelegramBot(messageText) {
-  if (!TELEGRAM_CONFIG.ENABLED) return { ok: false, skipped: true };
-
-  if (!TELEGRAM_CONFIG.BOT_TOKEN || !TELEGRAM_CONFIG.CHAT_ID) {
-    console.warn("Chưa cấu hình TELEGRAM_CONFIG.BOT_TOKEN hoặc CHAT_ID.");
-    return { ok: false, reason: "missing_token" };
-  }
-
-  const endpoint = `https://api.telegram.org/bot${TELEGRAM_CONFIG.BOT_TOKEN}/sendMessage`;
-
-  try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CONFIG.CHAT_ID,
-        text: messageText,
-        parse_mode: "HTML"
-      })
-    });
-
-    const data = await response.json();
-    if (!data.ok) {
-      console.error("Telegram API lỗi:", data);
-    }
-    return data;
-  } catch (error) {
-    console.error("Không kết nối được Telegram Bot API:", error);
-    return { ok: false, error };
-  }
-}
-
-function escapeHtml(str) {
-  return String(str || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-// ===== 1. LUỒNG TẠO PHIẾU & XÁC NHẬN OTP 60 GIÂY =====
 let generatedOtp = "";
 let countdownSeconds = 60;
 let countdownTimer = null;
+let otpReadyForInput = false;
 let lastCompletedReceipt = null;
+let latestZaloOtpMessage = "";
 
 function isValidVietnamesePhone(phone) {
   const cleaned = phone.replace(/\s+/g, "");
@@ -70,7 +34,69 @@ function setActiveStep(step) {
   document.getElementById("ticketStep3").classList.toggle("hidden", step !== 3);
 }
 
-async function handleSendOtp(event) {
+function buildZaloOtpMessage({ fullName, phone, region, otp, time }) {
+  return [
+    "[SỮA KUN CHO BẠN] Mã xác nhận phiếu (sau 60s)",
+    `Họ và tên: ${fullName}`,
+    `Số điện thoại: ${phone}`,
+    `Vùng miền: ${region}`,
+    `Mã xác nhận: ${otp}`,
+    `Thời điểm cấp mã: ${time}`
+  ].join("\n");
+}
+
+function buildZaloCompletedMessage({ code, fullName, phone, region, otp, nowStr }) {
+  return [
+    "[SỮA KUN CHO BẠN] Phiếu đã hoàn tất",
+    `Mã phiếu: ${code}`,
+    `Họ và tên: ${fullName}`,
+    `Số điện thoại: ${phone}`,
+    `Vùng miền: ${region}`,
+    `Mã xác nhận đã dùng: ${otp}`,
+    `Thời gian hoàn tất: ${nowStr}`
+  ].join("\n");
+}
+
+function triggerZaloShareUrl(messageText) {
+  const url = `https://zalo.me/share?text=${encodeURIComponent(messageText)}`;
+  const win = window.open(url, "_blank", "noopener");
+  const linkEl = document.getElementById("zaloOtpLink");
+  if (linkEl) {
+    linkEl.href = url;
+    linkEl.classList.remove("hidden");
+  }
+  return win;
+}
+
+async function dispatchOtpToZaloAfter60s(payload) {
+  const messageText = buildZaloOtpMessage(payload);
+  latestZaloOtpMessage = messageText;
+
+  if (!ZALO_60S_CONFIG.ENABLED) return;
+
+  if (ZALO_60S_CONFIG.WEBHOOK_URL) {
+    try {
+      await fetch(ZALO_60S_CONFIG.WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "otp_after_60s",
+          channel: "zalo",
+          text: messageText,
+          data: payload
+        })
+      });
+    } catch (err) {
+      console.error("Lỗi gửi webhook Zalo:", err);
+    }
+  }
+
+  if (ZALO_60S_CONFIG.AUTO_OPEN_ZALO_AT_60S) {
+    triggerZaloShareUrl(messageText);
+  }
+}
+
+function handleSendOtp(event) {
   event.preventDefault();
   const fullName = document.getElementById("fullName").value.trim();
   const phone = document.getElementById("phoneNumber").value.trim().replace(/\s+/g, "");
@@ -91,47 +117,46 @@ async function handleSendOtp(event) {
   errorEl.textContent = "";
   document.getElementById("displayPhone").textContent = phone;
   setActiveStep(2);
-  await startOtpCountdown(fullName, phone, region, false);
+  start60sWaitBeforeZaloOtp(fullName, phone, region);
 }
 
-async function startOtpCountdown(fullNameVal, phoneVal, regionVal, isResend = false) {
+function start60sWaitBeforeZaloOtp(fullNameVal, phoneVal, regionVal) {
   clearInterval(countdownTimer);
-  generatedOtp = generateSixDigitOtp();
+  generatedOtp = "";
+  otpReadyForInput = false;
   countdownSeconds = 60;
 
   const fullName = fullNameVal || document.getElementById("fullName").value.trim();
   const phone = phoneVal || document.getElementById("phoneNumber").value.trim().replace(/\s+/g, "");
   const region = regionVal || document.getElementById("ticketRegion").value;
 
-  document.getElementById("demoOtpCode").textContent = generatedOtp;
-  document.getElementById("otpInput").value = "";
+  const statusEl = document.getElementById("otpWaitStatus");
+  const codeEl = document.getElementById("demoOtpCode");
+  const otpInput = document.getElementById("otpInput");
+  const verifyBtn = document.getElementById("verifyBtn");
+  const resendBtn = document.getElementById("resendBtn");
+  const zaloLink = document.getElementById("zaloOtpLink");
+
+  if (statusEl) {
+    statusEl.textContent = "Đang chờ đủ 60 giây để mã xác nhận được gửi về Zalo...";
+  }
+  if (codeEl) codeEl.textContent = "Chờ 60s...";
+  if (otpInput) {
+    otpInput.value = "";
+    otpInput.disabled = true;
+  }
+  if (verifyBtn) verifyBtn.disabled = true;
+  if (resendBtn) resendBtn.disabled = true;
+  if (zaloLink) zaloLink.classList.add("hidden");
   document.getElementById("step2Error").textContent = "";
 
   const timerText = document.getElementById("countdownText");
   const progressBar = document.getElementById("countdownBar");
-  const resendBtn = document.getElementById("resendBtn");
-  const verifyBtn = document.getElementById("verifyBtn");
-
   timerText.textContent = "60s";
   timerText.classList.remove("expired");
   progressBar.style.width = "100%";
-  resendBtn.disabled = true;
-  verifyBtn.disabled = false;
 
-  // Gửi thông tin đăng ký & mã OTP 60s về Telegram Bot
-  const msg = [
-    isResend
-      ? "🔄 <b>GỬI LẠI MÃ OTP (60S) - SỮA KUN</b>"
-      : "📩 <b>ĐĂNG KÝ TẠO PHIẾU & MÃ OTP (60S) - SỮA KUN</b>",
-    `• <b>Họ và tên:</b> ${escapeHtml(fullName)}`,
-    `• <b>Số điện thoại:</b> <code>${escapeHtml(phone)}</code>`,
-    `• <b>Vùng miền:</b> ${escapeHtml(region)}`,
-    `• <b>Mã OTP cấp (60s):</b> <code>${generatedOtp}</code>`,
-    `• <b>Thời gian:</b> ${escapeHtml(new Date().toLocaleString("vi-VN"))}`
-  ].join("\n");
-  await sendToTelegramBot(msg);
-
-  countdownTimer = setInterval(() => {
+  countdownTimer = setInterval(async () => {
     countdownSeconds -= 1;
 
     if (countdownSeconds > 0) {
@@ -139,43 +164,67 @@ async function startOtpCountdown(fullNameVal, phoneVal, regionVal, isResend = fa
       progressBar.style.width = `${(countdownSeconds / 60) * 100}%`;
     } else {
       clearInterval(countdownTimer);
-      timerText.textContent = "Hết hạn (0s)";
-      timerText.classList.add("expired");
+      timerText.textContent = "0s";
       progressBar.style.width = "0%";
-      resendBtn.disabled = false;
-      verifyBtn.disabled = true;
-      document.getElementById("step2Error").textContent =
-        "Mã xác nhận đã hết hiệu lực sau 60 giây. Vui lòng bấm “Gửi lại mã mới”.";
+
+      generatedOtp = generateSixDigitOtp();
+      otpReadyForInput = true;
+      const timeStr = new Date().toLocaleString("vi-VN");
+
+      if (statusEl) {
+        statusEl.textContent =
+          "Đã đủ 60 giây! Mã xác nhận đã được gửi về Zalo — hãy nhập mã bên dưới để hoàn tất phiếu.";
+      }
+      if (codeEl) codeEl.textContent = generatedOtp;
+      if (otpInput) {
+        otpInput.disabled = false;
+        otpInput.focus();
+      }
+      if (verifyBtn) verifyBtn.disabled = false;
+      if (resendBtn) resendBtn.disabled = false;
+
+      await dispatchOtpToZaloAfter60s({
+        fullName,
+        phone,
+        region,
+        otp: generatedOtp,
+        time: timeStr
+      });
     }
   }, 1000);
 }
 
 function autoFillOtp() {
-  if (countdownSeconds > 0 && generatedOtp) {
+  if (otpReadyForInput && generatedOtp) {
     document.getElementById("otpInput").value = generatedOtp;
     document.getElementById("step2Error").textContent = "";
   }
 }
 
-function resendOtp() {
-  startOtpCountdown(null, null, null, true);
+function resendOtpAfter60s() {
+  start60sWaitBeforeZaloOtp();
+}
+
+function openZaloOtpAgain() {
+  if (latestZaloOtpMessage) {
+    triggerZaloShareUrl(latestZaloOtpMessage);
+  }
 }
 
 async function handleVerifyOtp() {
   const userOtp = document.getElementById("otpInput").value.trim();
   const errorEl = document.getElementById("step2Error");
 
-  if (countdownSeconds <= 0) {
-    errorEl.textContent = "Mã xác nhận đã hết hạn. Vui lòng bấm “Gửi lại mã mới”.";
+  if (!otpReadyForInput || !generatedOtp) {
+    errorEl.textContent = "Vui lòng đợi đủ 60 giây để hệ thống gửi mã xác nhận về Zalo.";
     return;
   }
 
   if (userOtp !== generatedOtp) {
-    errorEl.textContent = "Mã xác nhận không chính xác. Vui lòng kiểm tra lại 6 chữ số.";
+    errorEl.textContent = "Mã xác nhận không chính xác. Vui lòng nhập đúng mã 6 chữ số đã gửi về Zalo.";
     return;
   }
 
-  clearInterval(countdownTimer);
   errorEl.textContent = "";
 
   const fullName = document.getElementById("fullName").value.trim();
@@ -194,21 +243,33 @@ async function handleVerifyOtp() {
 
   setActiveStep(3);
 
-  // Gửi thông tin hoàn tất phiếu về Telegram Bot
-  const completedMsg = [
-    "✅ <b>HOÀN TẤT PHIẾU XÁC NHẬN - SỮA KUN CHO BẠN</b>",
-    `• <b>Mã phiếu:</b> <code>${escapeHtml(code)}</code>`,
-    `• <b>Họ và tên:</b> ${escapeHtml(fullName)}`,
-    `• <b>Số điện thoại:</b> <code>${escapeHtml(phone)}</code>`,
-    `• <b>Vùng miền:</b> ${escapeHtml(region)}`,
-    `• <b>Mã OTP đã nhập:</b> <code>${escapeHtml(userOtp)}</code>`,
-    `• <b>Thời gian hoàn tất:</b> ${escapeHtml(nowStr)}`
-  ].join("\n");
-  await sendToTelegramBot(completedMsg);
+  if (ZALO_60S_CONFIG.ENABLED && ZALO_60S_CONFIG.WEBHOOK_URL) {
+    try {
+      await fetch(ZALO_60S_CONFIG.WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "ticket_completed",
+          channel: "zalo",
+          text: buildZaloCompletedMessage(lastCompletedReceipt),
+          data: lastCompletedReceipt
+        })
+      });
+    } catch (err) {
+      console.error("Lỗi gửi phiếu hoàn tất tới Zalo Webhook:", err);
+    }
+  }
+}
+
+function sendCompletedTicketToZalo() {
+  if (!lastCompletedReceipt) return;
+  triggerZaloShareUrl(buildZaloCompletedMessage(lastCompletedReceipt));
 }
 
 function resetTicketFlow() {
   clearInterval(countdownTimer);
+  generatedOtp = "";
+  otpReadyForInput = false;
   document.getElementById("step1Error").textContent = "";
   document.getElementById("step2Error").textContent = "";
   setActiveStep(1);
@@ -269,7 +330,7 @@ function openPostcardFromReceipt() {
   openPostcardModal(lastCompletedReceipt.region.split(" ")[0]);
 }
 
-// ===== 2. MODAL TẠO POSTCARD & GỬI LỜI NHẮN VỀ TELEGRAM =====
+// ===== MODAL & VẼ POSTCARD CANVAS =====
 let currentRegion = "Biển Đảo";
 let suggestionIndex = 0;
 
@@ -394,27 +455,7 @@ function updatePostcardPreview() {
   ctx.fillText("1 lượt chia sẻ = 1 hộp KUN 100% Sữa Tươi trao đi", 270, 610);
 }
 
-async function downloadPostcard() {
-  const sender = document.getElementById("senderName").value.trim() || "Bạn đồng hành";
-  const kid = document.getElementById("kidName").value.trim() || "Không nhập";
-  const wish =
-    document.getElementById("wishText").value.trim() ||
-    "Chúc các em luôn mạnh khỏe, vui tươi và cao lớn mỗi ngày cùng KUN!";
-  const genderEl = document.querySelector('input[name="gender"]:checked');
-  const gender = genderEl ? genderEl.value : "Nữ";
-
-  // Gửi thông tin Postcard về Telegram Bot
-  const postcardMsg = [
-    "💌 <b>TẠO POSTCARD LỜI NHẮN GỬI - SỮA KUN CHO BẠN</b>",
-    `• <b>Vùng miền nhận:</b> ${escapeHtml(currentRegion)}`,
-    `• <b>Tên người gửi:</b> ${escapeHtml(sender)} (${escapeHtml(gender)})`,
-    `• <b>Tên của bé:</b> ${escapeHtml(kid)}`,
-    `• <b>Lời nhắn gửi:</b> “${escapeHtml(wish)}”`,
-    `• <b>Thời gian:</b> ${escapeHtml(new Date().toLocaleString("vi-VN"))}`
-  ].join("\n");
-  await sendToTelegramBot(postcardMsg);
-
-  // Tải ảnh Postcard về máy
+function downloadPostcard() {
   const canvas = document.getElementById("postcardCanvas");
   const link = document.createElement("a");
   link.download = `postcard-sua-kun-${currentRegion.toLowerCase().replace(/\s+/g, "-")}.png`;
